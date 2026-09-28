@@ -59,7 +59,7 @@ module Choruspro
       end
     end
 
-    # Facture (ou avoir, acompte) au canal `chorus_pro`, brouillon ou émise,
+    # Facture (ou avoir, acompte) au canal `public_portal`, brouillon ou émise,
     # avec son dépôt et ses contrôles. `service_code` = référence acheteur
     # (BT-10), `engagement_number` = référence de commande (BT-13) de la
     # facture ; `recipient_siret` = SIRET du client.

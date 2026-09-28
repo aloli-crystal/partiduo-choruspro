@@ -10,13 +10,13 @@ module Choruspro
     alias FieldError = Partiduo::Api::FieldError
 
     SYSTEM   = Partiduo::Api::Actor.system
-    CHANNEL  = "chorus_pro"
+    CHANNEL  = "public_portal"
     PAGE     = 200
     SIRET_RE = /\A[0-9]{14}\z/
 
     # --- Factures au canal Chorus Pro ------------------------------------------
 
-    # Documents fiscaux au canal `chorus_pro`, brouillons compris, du plus
+    # Documents fiscaux au canal `public_portal`, brouillons compris, du plus
     # récent au plus ancien (le canal se relit : il reste modifiable jusqu'à
     # l'envoi).
     def self.documents : Array(Inv::DocumentView)

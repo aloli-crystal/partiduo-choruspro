@@ -2,7 +2,7 @@
 
 # Manifeste de l'extension Chorus Pro (ADR-003 D2, ADR-004 D9 révisé).
 #
-# * Dépendance : `INVOICING` (factures au canal `chorus_pro`, PDF/A-3
+# * Dépendance : `INVOICING` (factures au canal `public_portal`, PDF/A-3
 #   Factur-X, « Marquer comme envoyé »).
 # * Permissions : `choruspro.invoice.read` (voir les factures aux clients
 #   publics et leur statut), `choruspro.invoice.transmit` (déposer sur

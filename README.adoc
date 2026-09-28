@@ -28,7 +28,7 @@ du contrat : link:doc/api/choruspro.adoc[].
 |Fonction |Dans CHORUSPRO
 
 |Factures concernées
-|Factures, acomptes et avoirs au canal `chorus_pro` du cœur, proposé pour
+|Factures, acomptes et avoirs au canal `public_portal` du cœur, proposé pour
 un client de nature « administration publique » (SIREN commençant par 1
 ou 2, ou nature choisie sur la fiche). Brouillons listés avec leurs
 avertissements.

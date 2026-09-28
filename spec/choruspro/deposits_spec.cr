@@ -23,9 +23,9 @@ describe "Chorus Pro — dépôts (ADR-004 D9 révisé)" do
   it "propose le canal Chorus Pro pour un client public et liste ses factures, brouillons compris" do
     S.books
     customer = S.public_customer
-    Inv.propose_channel(S::SYSTEM, customer.id).channel.should eq("chorus_pro")
+    Inv.propose_channel(S::SYSTEM, customer.id).channel.should eq("public_portal")
     draft = S.draft(customer, buyer_reference: nil, order_reference: nil)
-    draft.issue_channel.should eq("chorus_pro")
+    draft.issue_channel.should eq("public_portal")
     listed = Api.invoices(S.admin)
     listed.map(&.id).should eq([draft.id])
     listed.first.controls.map(&.key).should eq(%w[choruspro.controls.draft choruspro.controls.references_hint])

@@ -29,7 +29,7 @@ d'accès en première ligne, vues immuables, `Result` à erreurs par champ,
 == Factures et dépôts
 
 * `invoices(actor) : Array(InvoiceView)` — documents fiscaux au canal
-  `chorus_pro`, brouillons compris, contrôles locaux.
+  `public_portal`, brouillons compris, contrôles locaux.
 * `invoice(actor, id) : InvoiceView` — contrôles auprès de Chorus Pro
   (structure, engagement, service) si possible.
 * `pdf(actor, id) : FileView` — PDF/A-3 Factur-X à déposer sur le portail.

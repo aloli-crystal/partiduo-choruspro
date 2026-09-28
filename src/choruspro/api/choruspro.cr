@@ -103,7 +103,7 @@ module Choruspro
 
     # --- Factures ----------------------------------------------------------------
 
-    # Factures, acomptes et avoirs au canal `chorus_pro`, brouillons compris,
+    # Factures, acomptes et avoirs au canal `public_portal`, brouillons compris,
     # avec leur dépôt et leurs contrôles locaux (sans appel à Chorus Pro).
     def self.invoices(actor : Actor) : Array(InvoiceView)
       Guard.authorize!(actor, READ, module_code: MODULE_CODE)
@@ -139,7 +139,7 @@ module Choruspro
     # --- Dépôt et suivi ------------------------------------------------------------
 
     # Dépose la facture sur Chorus Pro puis la marque envoyée. Refus :
-    # brouillon, canal autre que `chorus_pro`, SIRET du client absent, déjà
+    # brouillon, canal autre que `public_portal`, SIRET du client absent, déjà
     # déposée (sauf « à recycler »), déjà envoyée autrement, transport ou
     # identifiants absents, structure inconnue, engagement ou service exigé
     # absent, service inconnu, erreur de Chorus Pro (notée dans

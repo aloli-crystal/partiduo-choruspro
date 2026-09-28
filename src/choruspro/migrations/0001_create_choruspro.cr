@@ -8,7 +8,7 @@
 # et son identifiant chez Chorus Pro (sauf dépôt noté à la main) ; une
 # facture rejetée ou suspendue a son motif ; la facture est un document du
 # module Facturation (clé étrangère vers `invoicing_document`, canal
-# `chorus_pro` de la migration invoicing 0003) ; un dépôt ne se supprime pas.
+# `public_portal` des migrations invoicing 0003 et 0004) ; un dépôt ne se supprime pas.
 class Migration::Choruspro::V0001 < Marten::Migration
   depends_on :invoicing, "0003_customer_nature_pdf_copy"
   depends_on :auth, "0001_create_auth_user_table"
