@@ -37,7 +37,11 @@ d'accès en première ligne, vues immuables, `Result` à erreurs par champ,
   `Partiduo::Api::Invoicing.mark_sent` ; refus par contrôle
   (`choruspro.controls.*`) ou erreur du transport
   (`choruspro.errors.transport.*`, notée dans l'historique).
-* `refresh(actor, id)`, `refresh_all(actor) : Result(Int32)` — statuts.
+* `refresh(actor, id)`, `refresh_all(actor) : Result(Int32)` — statuts ;
+  `refresh_all` saute les factures mises en paiement, rejetées ou réglées
+  d'après le lettrage. Un transport qui n'apprend l'identifiant définitif
+  qu'au suivi (flux PISTE) le rend dans `RemoteStatus#remote_id`, retenu à
+  la place de `flux:<numéro>`.
 * `note_manual(actor, id, ManualInput)`, `note_status(actor, id,
   StatusInput)` — repli sans transport.
 * `counts(actor) : CountsView` — à déposer, à reprendre.
@@ -54,3 +58,18 @@ l'écran, refus au dépôt), `no_credentials`, `structure_unknown`,
 
 `submitted`, `delivered`, `paid`, `suspended`, `to_recycle`, `rejected`
 (correspondance des statuts de Chorus Pro : `Choruspro::Config::REMOTE_STATUSES`).
+
+== Événements reçus
+
+* `payment.matched` (`matching_id`, `sources` = `invoice:<id>,…`) : relit la
+  facture par `Partiduo::Api::Invoicing` ; historique `payment` (une fois
+  par lettrage et statut) ; facture réglée → `SubmissionView#settled_at`,
+  statut `paid` s'il était `submitted`, `delivered` ou `suspended`.
+* `payment.unmatched` : règlement retiré (`unpayment`), statut `paid` venu du
+  seul lettrage ramené au dernier statut relevé. DECISIONS D-CPP-002.
+
+== Transports
+
+`Choruspro::Transport` (abstrait), `Choruspro::PisteTransport` (API PISTE,
+branché par `PARTIDUO_CHORUSPRO_TRANSPORT=piste`, D-CPP-001), Chorus Pro
+simulé des specs.

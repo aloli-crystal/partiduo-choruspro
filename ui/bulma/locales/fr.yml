@@ -39,6 +39,7 @@ fr:
       remote_status: "Statut Chorus Pro"
       submitted_at: "Déposée le"
       status_at: "Statut relevé le"
+      settled_at: "Réglée le (lettrage)"
       reason: "Motif"
       attempts: "Dépôts"
       manual_title: "Dépôt fait sur le portail"

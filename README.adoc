@@ -50,6 +50,12 @@ idempotent sur une référence par tentative ; la facture passe « envoyée »
 paiement, suspendue, à recycler, rejetée (motif conservé) ; historique ;
 un dépôt ne se supprime pas (déclencheur PostgreSQL).
 
+|Paiements
+|Abonnée à `payment.matched` et `payment.unmatched` (lettrage de la
+Comptabilité) : facture réglée → dépôt noté réglé, statut « mise en
+paiement », suivi arrêté ; délettrage → retour au dernier statut relevé
+(D-CPP-002).
+
 |Repli
 |Sans connexion : PDF à déposer sur le portail, dépôt et statuts notés à la
 main.
@@ -63,10 +69,22 @@ environnement de qualification ou de production toujours affiché.
 == État
 
 Écrite contre une interface abstraite (`Choruspro::Transport`) et un Chorus
-Pro simulé (`spec/support/simulated_chorus_pro.cr`). L'adaptateur réel (API
-PISTE, bac à sable de qualification) se branche par
-`Choruspro::Transports.current =` quand les accès sont obtenus (BLOCAGES
-B-FIN-002).
+Pro simulé (`spec/support/simulated_chorus_pro.cr`). L'adaptateur réel
+`Choruspro::PisteTransport` (`src/choruspro/piste.cr` : jeton OAuth 2 PISTE,
+en-tête `cpro-account`, structures et services, dépôt du flux Factur-X,
+suivi du flux puis de la facture) est écrit d'après la documentation
+publique et testé contre un HTTP simulé, mais *pas encore essayé* sur la
+qualification faute d'accès (BLOCAGES B-FIN-002). Il se branche par
+`PARTIDUO_CHORUSPRO_TRANSPORT=piste` (DECISIONS D-CPP-001) ; sans cette
+variable, l'extension reste en repli (dépôt sur le portail noté à la main).
+
+Suite d'intégration facultative : `spec/integration/qualification_spec.cr`,
+activée si `~/.config/partiduo/choruspro/` et
+`~/.config/partiduo/choruspro-sandbox.env` existent et ne sont pas vides
+(variables `CHORUSPRO_SANDBOX_CLIENT_ID`, `_CLIENT_SECRET`, `_LOGIN`,
+`_PASSWORD`, `_RECIPIENT_SIRET` ; dépôt réel seulement avec
+`CHORUSPRO_SANDBOX_DEPOSIT=on` et `facturx.pdf` dans le dossier). Aucun
+secret n'est affiché ni journalisé.
 
 == Composition
 

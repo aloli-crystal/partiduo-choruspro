@@ -39,6 +39,7 @@ en:
       remote_status: "Chorus Pro status"
       submitted_at: "Submitted on"
       status_at: "Status fetched on"
+      settled_at: "Settled on (matching)"
       reason: "Reason"
       attempts: "Submissions"
       manual_title: "Submission made on the portal"

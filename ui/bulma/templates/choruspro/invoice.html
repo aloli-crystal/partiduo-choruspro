@@ -28,6 +28,7 @@
     <dt>{% translate "choruspro_ui.invoice.submitted_at" %}</dt><dd>{{ submission.submitted_at }}</dd>
     {% if submission.remote_status %}<dt>{% translate "choruspro_ui.invoice.remote_status" %}</dt><dd class="pd-mono">{{ submission.remote_status }}</dd>{% endif %}
     {% if submission.status_at %}<dt>{% translate "choruspro_ui.invoice.status_at" %}</dt><dd>{{ submission.status_at }}</dd>{% endif %}
+    {% if submission.settled_at %}<dt>{% translate "choruspro_ui.invoice.settled_at" %}</dt><dd data-choruspro-settled>{{ submission.settled_at }}</dd>{% endif %}
     {% if submission.reason %}<dt>{% translate "choruspro_ui.invoice.reason" %}</dt><dd>{{ submission.reason }}</dd>{% endif %}
     <dt>{% translate "choruspro_ui.invoice.attempts" %}</dt><dd>{{ submission.attempts }}</dd>
   </dl></div>

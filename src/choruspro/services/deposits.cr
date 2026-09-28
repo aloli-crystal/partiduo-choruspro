@@ -232,9 +232,17 @@ module Choruspro
       credentials = self.credentials || raise TransportError.new("choruspro.controls.no_credentials")
       remote = transport.status(credentials, row.remote_id.to_s)
       status = Config.local_status(remote.code) || row.status.to_s
-      return false if remote.code == row.remote_status && status == row.status
+      # Réglée d'après le lettrage : un statut en retard ne la fait pas
+      # revenir en arrière (D-CPP-002).
+      status = "paid" if row.settled_at && Payments::SETTLEABLE.includes?(status)
+      resolved = remote.remote_id.presence
+      resolved = nil if resolved == row.remote_id
+      return false if remote.code == row.remote_status && status == row.status && resolved.nil?
       reason = remote.reason.presence || (status.in?("rejected", "suspended") ? remote.code : "")
       Partiduo::Api::Transaction.run do
+        # Identifiant de la facture chez Chorus Pro, connu une fois le flux
+        # intégré (adaptateur PISTE : `flux:<numéro>` → identifiant CPP).
+        resolved.try { |value| row.remote_id = value }
         apply(row, status, remote.code, reason, actor)
         Partiduo::Api::Result(Nil).success(nil)
       end
@@ -270,7 +278,7 @@ module Choruspro
         remote_status: row.remote_status.to_s, reason: row.reason.to_s, manual: row.manual!,
         attempts: row.attempts!.to_i32, recipient_siret: row.recipient_siret.to_s,
         service_code: row.service_code.to_s, engagement_number: row.engagement_number.to_s,
-        submitted_at: row.submitted_at!, status_at: row.status_at, events: events,
+        submitted_at: row.submitted_at!, status_at: row.status_at, events: events, settled_at: row.settled_at,
       )
     end
   end

@@ -10,8 +10,10 @@
 #   `choruspro.settings.manage` (identifiants PISTE et compte technique).
 # * Menus : « Chorus Pro » sous « Facturation » et paramètres sous
 #   « Paramètres ».
-# * Aucun abonnement : le canal se relit au dépôt (il reste modifiable
-#   jusqu'à l'envoi, D-INV-016).
+# * Abonnements : `payment.matched` et `payment.unmatched` (lettrage de
+#   la Comptabilité) — facture réglée, suivi arrêté (D-CPP-002). Le canal,
+#   lui, se relit au dépôt (il reste modifiable jusqu'à l'envoi,
+#   D-INV-016).
 Partiduo::Modules.register do
   code "CHORUSPRO"
   name "choruspro.module.name"
@@ -27,6 +29,9 @@ Partiduo::Modules.register do
     label: "choruspro.menu.invoices"
   menu "CHORUSPRO_SETTINGS", parent: "SETTINGS", order: 93, route: "choruspro:settings",
     permission: "choruspro.settings.manage", label: "choruspro.menu.settings"
+
+  on("payment.matched") { |event| Choruspro::Payments.on_matched(event) }
+  on("payment.unmatched") { |event| Choruspro::Payments.on_unmatched(event) }
 
   ui "bulma", path: "ui/bulma"
 end

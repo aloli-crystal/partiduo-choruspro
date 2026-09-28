@@ -166,11 +166,12 @@ module Choruspro
     end
 
     # Relève les statuts de toutes les factures déposées par l'API et pas
-    # encore réglées ; rend le nombre de changements.
+    # encore réglées (ni mises en paiement, ni rejetées, ni réglées d'après
+    # le lettrage) ; rend le nombre de changements.
     def self.refresh_all(actor : Actor) : Result(Int32)
       Guard.authorize!(actor, TRANSMIT, module_code: MODULE_CODE)
       changed = 0
-      Submission.filter(manual: false).exclude(status__in: %w[paid rejected]).order(:id).each do |row|
+      Submission.filter(manual: false, settled_at__isnull: true).exclude(status__in: %w[paid rejected]).order(:id).each do |row|
         changed += 1 if Deposits.refresh!(row, actor)
       rescue ex : TransportError
         Deposits.log(row.id, row.invoice_id!.to_i64, "error", "", ex.key, actor)

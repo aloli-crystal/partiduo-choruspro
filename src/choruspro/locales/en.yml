@@ -26,6 +26,8 @@ en:
       status: "Status change"
       manual: "Submission noted by hand"
       error: "Error"
+      payment: "Payment matched"
+      unpayment: "Payment unmatched"
     controls:
       not_chorus_channel: "The issue channel of this document is not Chorus Pro."
       siret_missing: "Enter the SIRET of customer %{customer} on its card: Chorus Pro identifies the public body by its SIRET."

@@ -70,6 +70,18 @@ describe "Écran Chorus Pro sous /ext/CHORUSPRO/ (ADR-005 D4, ADR-004 D9 révis�
     browser.follow(status).html.should contain(%(data-choruspro-status="paid"))
   end
 
+  it "affiche le règlement constaté par le lettrage (payment.matched)" do
+    browser = signed_in
+    S.connect
+    invoice = S.issue
+    Choruspro::Api.transmit(S.admin, invoice.id).value!
+    Partiduo::Events.publish("payment.matched", {"matching_id" => "7", "sources" => "invoice:#{invoice.id}"})
+    page = browser.get("/ext/CHORUSPRO/invoices/#{invoice.id}").html
+    page.should contain("data-choruspro-settled")
+    page.should contain(%(data-choruspro-status="paid"))
+    page.should contain("Paiement lettré")
+  end
+
   it "refuse les commandes sans le droit de déposer, et les paramètres sans le droit de les gérer" do
     S.books
     profile = PartiduoUi::Accounts.profile("Lecteur", [Choruspro::Api::READ, "invoicing.invoice.read"])

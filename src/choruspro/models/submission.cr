@@ -23,12 +23,14 @@ module Choruspro
     field :submitted_at, :date_time
     field :submitted_by_id, :big_int, blank: true, null: true
     field :status_at, :date_time, blank: true, null: true
+    # Règlement complet constaté par le lettrage (`payment.matched`).
+    field :settled_at, :date_time, blank: true, null: true
 
     with_timestamp_fields
   end
 
   # Historique d'un dépôt : dépôt, changement de statut, erreur du
-  # transport, avec son auteur. Interne.
+  # transport, paiement lettré ou délettré, avec son auteur. Interne.
   class SubmissionEvent < Marten::Model
     field :id, :big_int, primary_key: true, auto: true
     field :submission_id, :big_int, blank: true, null: true, index: true

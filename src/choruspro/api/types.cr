@@ -35,7 +35,8 @@ module Choruspro
     end
 
     # Dépôt d'une facture : statut local (`STATUSES`) et brut, identifiant
-    # chez Chorus Pro, motif, historique.
+    # chez Chorus Pro, motif, historique ; `settled_at` : règlement complet
+    # constaté par le lettrage (`payment.matched`).
     record SubmissionView,
       id : Int64,
       status : String,
@@ -49,7 +50,8 @@ module Choruspro
       engagement_number : String,
       submitted_at : Time,
       status_at : Time?,
-      events : Array(EventView) do
+      events : Array(EventView),
+      settled_at : Time? = nil do
       def status_key : String
         "choruspro.statuses.#{status}"
       end

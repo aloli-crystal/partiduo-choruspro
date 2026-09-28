@@ -39,6 +39,7 @@ nl:
       remote_status: "Status bij Chorus Pro"
       submitted_at: "Ingediend op"
       status_at: "Status opgehaald op"
+      settled_at: "Betaald op (afpunting)"
       reason: "Reden"
       attempts: "Indieningen"
       manual_title: "Indiening via het portaal"

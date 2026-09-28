@@ -4,6 +4,7 @@ require "./manifest"
 require "./config"
 require "./secrets"
 require "./transport"
+require "./piste"
 require "./models/**"
 require "./services/**"
 require "./api/**"
@@ -31,3 +32,5 @@ module Choruspro
 
   INSTALLED_APPS = [Choruspro::App] of Marten::Apps::Config.class
 end
+
+Choruspro::Transports.configure_from_env

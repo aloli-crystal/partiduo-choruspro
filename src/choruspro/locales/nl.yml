@@ -26,6 +26,8 @@ nl:
       status: "Statuswijziging"
       manual: "Indiening handmatig genoteerd"
       error: "Fout"
+      payment: "Betaling afgepunt"
+      unpayment: "Afpunting van betaling ongedaan gemaakt"
     controls:
       not_chorus_channel: "Het uitgiftekanaal van dit document is niet Chorus Pro."
       siret_missing: "Vul het SIRET-nummer van klant %{customer} in op de fiche: Chorus Pro identificeert de overheidsinstantie aan de hand van haar SIRET."

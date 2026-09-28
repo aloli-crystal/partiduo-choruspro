@@ -26,6 +26,8 @@ fr:
       status: "Changement de statut"
       manual: "Dépôt noté à la main"
       error: "Erreur"
+      payment: "Paiement lettré"
+      unpayment: "Paiement délettré"
     controls:
       not_chorus_channel: "Le canal d'émission de ce document n'est pas Chorus Pro."
       siret_missing: "Indiquez le SIRET du client %{customer} sur sa fiche : Chorus Pro identifie la structure publique par son SIRET."

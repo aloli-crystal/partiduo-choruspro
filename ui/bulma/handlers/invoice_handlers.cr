@@ -73,6 +73,7 @@ module Choruspro
           "attempts"      => row.attempts.to_s,
           "submitted_at"  => fmt.datetime(row.submitted_at),
           "status_at"     => row.status_at.try { |time| fmt.datetime(time) },
+          "settled_at"    => row.settled_at.try { |time| fmt.datetime(time) },
         })
       end
 

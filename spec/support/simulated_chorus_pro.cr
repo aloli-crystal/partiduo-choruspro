@@ -65,9 +65,12 @@ module Choruspro
       states[remote_id]? || raise TransportError.new("choruspro.errors.transport.unknown_invoice")
     end
 
-    # Fait avancer une facture chez Chorus Pro (côté destinataire).
-    def advance(remote_id : String, code : String, reason : String = "") : Nil
-      states[remote_id] = RemoteStatus.new(code, reason, Time.utc)
+    # Fait avancer une facture chez Chorus Pro (côté destinataire) ;
+    # `resolved` : identifiant définitif rendu au suivi (flux intégré), sous
+    # lequel la facture est ensuite connue.
+    def advance(remote_id : String, code : String, reason : String = "", resolved : String? = nil) : Nil
+      states[remote_id] = RemoteStatus.new(code, reason, Time.utc, resolved)
+      resolved.try { |id| states[id] = RemoteStatus.new(code, reason, Time.utc) }
     end
   end
 end

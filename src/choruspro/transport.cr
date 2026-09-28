@@ -31,9 +31,12 @@ module Choruspro
     service_code : String, engagement_number : String, total_gross : BigDecimal, currency : String,
     filename : String, pdf : Bytes
 
-  # État d'une facture chez Chorus Pro : statut brut (`statutFacture`),
-  # motif d'un rejet ou d'une suspension, date du dernier changement.
-  record RemoteStatus, code : String, reason : String = "", at : Time? = nil
+  # État d'une facture chez Chorus Pro : statut brut (`statutCourantCode`),
+  # motif d'un rejet ou d'une suspension, date du dernier changement ;
+  # `remote_id` : identifiant définitif de la facture quand le transport ne
+  # l'a appris qu'après le dépôt (flux intégré), à retenir à la place de
+  # celui rendu par `submit`.
+  record RemoteStatus, code : String, reason : String = "", at : Time? = nil, remote_id : String? = nil
 
   # Erreur du transport : `key` est une clé i18n
   # (`choruspro.errors.transport.*`) traduite à l'affichage ; le message
@@ -49,10 +52,8 @@ module Choruspro
 
   # Interface abstraite de Chorus Pro (ADR-004 D9 révisé) : l'extension est
   # écrite contre elle et testée contre un Chorus Pro simulé
-  # (`spec/support/simulated_chorus_pro.cr`). L'adaptateur réel (PISTE,
-  # `https://sandbox-api.piste.gouv.fr/cpro/…`) se branche par
-  # `Choruspro::Transports.current =` quand les accès de qualification sont
-  # obtenus (BLOCAGES B-FIN-002).
+  # (`spec/support/simulated_chorus_pro.cr`). L'adaptateur réel est
+  # `PisteTransport` (`piste.cr`).
   abstract class Transport
     # Nom affiché (« Chorus Pro », « Chorus Pro simulé »).
     abstract def name : String
@@ -72,12 +73,20 @@ module Choruspro
     abstract def status(credentials : Credentials, remote_id : String) : RemoteStatus
   end
 
-  # Transport actif de l'instance. `nil` tant que l'adaptateur réel n'est
-  # pas écrit : l'extension contrôle les factures, laisse télécharger le
-  # PDF à déposer sur le portail Chorus Pro et noter le dépôt à la main
-  # (repli, DECISIONS D-FIN-004).
+  # Transport actif de l'instance. `nil` par défaut : l'extension contrôle
+  # les factures, laisse télécharger le PDF à déposer sur le portail Chorus
+  # Pro et noter le dépôt à la main (repli, DECISIONS D-FIN-004).
+  # L'adaptateur PISTE (`PisteTransport`), écrit mais pas encore essayé sur
+  # la qualification (B-FIN-002), se branche par
+  # `PARTIDUO_CHORUSPRO_TRANSPORT=piste` (D-CPP-001).
   module Transports
     class_property current : Transport? = nil
+
+    ENV_VAR = "PARTIDUO_CHORUSPRO_TRANSPORT"
+
+    def self.configure_from_env : Nil
+      self.current = PisteTransport.new if ENV[ENV_VAR]?.try(&.strip.downcase) == "piste"
+    end
 
     def self.available? : Bool
       !current.nil?
