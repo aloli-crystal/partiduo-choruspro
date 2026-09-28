@@ -60,7 +60,7 @@ describe "Chorus Pro — dépôts (ADR-004 D9 révisé)" do
     S.chorus.advance(submission.remote_id, "MISE_A_DISPOSITION")
     submission_of(Api.refresh(S.admin, invoice.id).value!).status.should eq("delivered")
     S.chorus.advance(submission.remote_id, "MISE_EN_PAIEMENT")
-    Api.refresh_all(S.admin).value!.should eq(1)
+    Api.refresh_all(S.admin).value!.changed.should eq(1)
     final = submission_of(Api.invoice(S.admin, invoice.id))
     final.status.should eq("paid")
     final.events.map(&.action).should eq(%w[submitted status status])
@@ -90,7 +90,8 @@ describe "Chorus Pro — dépôts (ADR-004 D9 révisé)" do
     paper = Inv.issue(S::SYSTEM, Inv.create_document(S::SYSTEM, Inv::DocumentInput.new(kind: "invoice",
       customer_card_id: S.public_customer.id, lines: [Inv::LineInput.new(item_card_id: S.item.id, quantity: S::Books.d("1"))],
       issue_channel: "paper")).value!.id, Inv::IssueInput.new(S::Books.date("2026-09-15"))).value!
-    keys(Api.transmit(S.admin, paper.id)).should contain("choruspro.controls.not_chorus_channel")
+    # Hors canal, jamais déposé : introuvable pour l'extension (D-CPP-004).
+    expect_raises(Partiduo::Api::NotFound) { Api.transmit(S.admin, paper.id) }
 
     invoice = S.issue
     keys(Api.transmit(S.admin, invoice.id)).should eq(["choruspro.controls.no_credentials"])
@@ -126,7 +127,7 @@ describe "Chorus Pro — dépôts (ADR-004 D9 révisé)" do
     Api.counts(S.admin).attention.should eq(1)
   end
 
-  it "dépose de nouveau une facture « à recycler » avec une nouvelle référence" do
+  it "ne redépose pas une facture « à recycler » : recyclage sur le portail, puis relevé (D-CPP-006)" do
     S.books
     S.connect
     invoice = S.issue
@@ -134,11 +135,16 @@ describe "Chorus Pro — dépôts (ADR-004 D9 révisé)" do
     S.chorus.advance(first.remote_id, "A_RECYCLER", "Service destinataire erroné")
     recycled = Api.refresh(S.admin, invoice.id).value!
     submission_of(recycled).status.should eq("to_recycle")
-    recycled.transmittable?.should be_true
-    again = submission_of(Api.transmit(S.admin, invoice.id).value!)
-    again.attempts.should eq(2)
-    again.remote_id.should_not eq(first.remote_id)
-    S.chorus.remote_ids.keys.should eq(["PDUO-CPP-#{invoice.id}-1", "PDUO-CPP-#{invoice.id}-2"])
+    submission_of(recycled).attention?.should be_true
+    recycled.transmittable?.should be_false
+    recycled.controls.map(&.key).should eq(["choruspro.controls.recycle_on_portal"])
+    keys(Api.transmit(S.admin, invoice.id)).should eq(["choruspro.controls.recycle_on_portal"])
+    Api.counts(S.admin).should eq(Api::CountsView.new(0, 1))
+    S.chorus.deposits.size.should eq(1)
+    # Recyclée sur le portail : Chorus Pro la remet au bon service.
+    S.chorus.advance(first.remote_id, "MISE_A_DISPOSITION")
+    submission_of(Api.refresh(S.admin, invoice.id).value!).status.should eq("delivered")
+    Api.counts(S.admin).should eq(Api::CountsView.new(0, 0))
   end
 
   it "chiffre les identifiants, ne rend jamais les secrets, les vérifie auprès de Chorus Pro" do

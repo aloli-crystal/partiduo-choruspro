@@ -33,6 +33,14 @@
     <dt>{% translate "choruspro_ui.invoice.attempts" %}</dt><dd>{{ submission.attempts }}</dd>
   </dl></div>
 </section>{% endif %}
+{% if pending %}<section class="pd-panel" aria-labelledby="pd-cpp-pending" data-choruspro-pending>
+  <header><h2 id="pd-cpp-pending">{% translate "choruspro_ui.invoice.pending_title" %}</h2><span class="tag is-warning is-light">{{ pending.state }}</span></header>
+  <div class="pd-body"><dl class="pd-dl">
+    <dt>{% translate "choruspro_ui.invoice.reference" %}</dt><dd class="pd-mono">{{ pending.reference }}</dd>
+    <dt>{% translate "choruspro_ui.invoice.started_at" %}</dt><dd>{{ pending.started_at }}</dd>
+    {% if pending.remote_id %}<dt>{% translate "choruspro_ui.invoice.remote_id" %}</dt><dd class="pd-mono">{{ pending.remote_id }}</dd>{% endif %}
+  </dl>{% if release_url %}<form method="post" action="{{ release_url }}" class="mt-3" data-choruspro-release>{% csrf_input %}<p class="help mb-2">{% translate "choruspro_ui.invoice.release_help" %}</p><button class="button pd-touch" type="submit">{% include "ui/_icon.html" with name="x" %}<span>{% translate "choruspro_ui.actions.release" %}</span></button></form>{% endif %}</div>
+</section>{% endif %}
 {% if manual_url %}<section class="pd-panel" aria-labelledby="pd-cpp-manual">
   <header><h2 id="pd-cpp-manual">{% translate "choruspro_ui.invoice.manual_title" %}</h2></header>
   <div class="pd-body"><p class="help mb-3">{% translate "choruspro_ui.invoice.manual_help" %}</p>
@@ -53,7 +61,7 @@
   <header><h2 id="pd-cpp-events">{% translate "choruspro_ui.invoice.history" %}</h2></header>
   <div class="pd-scroll"><table class="table is-fullwidth"><caption class="is-sr-only">{% translate "choruspro_ui.invoice.history" %}</caption>
     <thead><tr><th scope="col">{% translate "choruspro_ui.invoice.at" %}</th><th scope="col">{% translate "choruspro_ui.invoice.event" %}</th><th scope="col">{% translate "choruspro_ui.invoice.detail" %}</th></tr></thead>
-    <tbody>{% for event in events %}<tr><td>{{ event.at }}</td><td>{{ event.action }}{% if event.status %} <span class="pd-mono is-size-7">{{ event.status }}</span>{% endif %}</td><td>{% if event.detail %}{{ event.detail }}{% endif %}</td></tr>{% endfor %}</tbody>
+    <tbody>{% for event in events %}<tr><td>{{ event.at }}</td><td>{{ event.action }}{% if event.status %} <span class="tag is-light">{{ event.status }}</span>{% endif %}{% if event.remote_status %} <span class="pd-mono is-size-7">{{ event.remote_status }}</span>{% endif %}</td><td>{% if event.detail %}{{ event.detail }}{% endif %}</td></tr>{% endfor %}</tbody>
   </table></div>
 </section>{% endif %}
 {% endblock content %}

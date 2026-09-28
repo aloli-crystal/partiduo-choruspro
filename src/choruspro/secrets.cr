@@ -12,13 +12,18 @@ module Choruspro
   # `v1:<base64(iv ‖ chiffré ‖ mac)>`.
   #
   # Clé : `PARTIDUO_CHORUSPRO_KEY` (64 caractères hexadécimaux) si elle est
-  # définie, sinon dérivée de la clé secrète de l'instance
+  # définie — mal formée, elle est refusée (`Error`, erreur journalisée au
+  # démarrage) plutôt que remplacée en silence (D-CPP-009) —, sinon dérivée de la clé secrète de l'instance
   # (`Marten.settings.secret_key`, `MARTEN_SECRET_KEY` en production) ; deux
   # sous-clés distinctes pour le chiffrement et l'authentification
   # (même format que D-EINV-004, DECISIONS D-FIN-004). Le cœur n'expose pas de
   # service de secrets : il est ici, interne à l'extension.
   module Secrets
-    PREFIX = "v1:"
+    PREFIX  = "v1:"
+    KEY_VAR = "PARTIDUO_CHORUSPRO_KEY"
+    KEY_RE  = /\A[0-9a-fA-F]{64}\z/
+
+    Log = ::Log.for("partiduo.choruspro.secrets")
 
     class Error < Exception
     end
@@ -74,8 +79,25 @@ module Choruspro
       Hash(String, String).from_json(decrypt(value))
     end
 
+    # Diagnostic de configuration : message d'erreur si la variable est
+    # définie mais mal formée, `nil` sinon.
+    def self.configuration_error : String?
+      hex = ENV[KEY_VAR]?
+      return if hex.nil? || hex.matches?(KEY_RE)
+      "#{KEY_VAR} doit compter 64 caractères hexadécimaux (#{hex.size} caractères) : " \
+      "identifiants Chorus Pro inutilisables"
+    end
+
+    # Journalise au démarrage une clé mal formée (sans la révéler).
+    def self.check_configuration : Nil
+      configuration_error.try { |message| Log.error { message } }
+    end
+
     private def self.master : Bytes
-      if (hex = ENV["PARTIDUO_CHORUSPRO_KEY"]?) && hex.matches?(/\A[0-9a-fA-F]{64}\z/)
+      if error = configuration_error
+        raise Error.new(error)
+      end
+      if hex = ENV[KEY_VAR]?
         hex.hexbytes
       else
         OpenSSL::Digest.new("SHA256").update("partiduo-choruspro:#{Marten.settings.secret_key}").final

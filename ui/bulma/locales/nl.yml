@@ -14,6 +14,7 @@ nl:
       document: "Factuur bekijken"
       pdf: "Pdf om op te laden"
       manual: "Indiening noteren"
+      release: "Reservering vrijgeven"
     invoices:
       title: "Facturen aan overheidsklanten"
       none: "Geen factuur via het kanaal Chorus Pro."
@@ -46,6 +47,10 @@ nl:
       manual_help: "Noteer de indiening nadat u de pdf op het portaal van Chorus Pro hebt opgeladen: de factuur wordt verzonden en het kanaal ligt vast."
       status_title: "Handmatig genoteerde status"
       history: "Geschiedenis"
+      pending_title: "Gereserveerde indiening"
+      reference: "Referentie van de poging"
+      started_at: "Begonnen op"
+      release_help: "Alleen als de factuur niet op het portaal van Chorus Pro staat: ze kan dan opnieuw worden ingediend."
       at: "Datum"
       event: "Gebeurtenis"
       detail: "Detail"
@@ -57,6 +62,8 @@ nl:
         other: "%{count} statussen gewijzigd."
       manual: "Indiening genoteerd; factuur als verzonden gemarkeerd."
       status: "Status genoteerd."
+      released: "Reservering vrijgegeven: de factuur kan opnieuw worden ingediend."
+      refresh_errors: "Statussen niet opgehaald:"
       credentials: "Gegevens opgeslagen."
       cleared: "Gegevens gewist."
     settings:

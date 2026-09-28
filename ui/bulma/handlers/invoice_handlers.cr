@@ -31,8 +31,12 @@ module Choruspro
 
       def post
         result = Api.refresh_all(current.actor)
-        if count = result.value?
-          flash["success"] = I18n.t("choruspro_ui.flash.refreshed_all", count: count)
+        if report = result.value?
+          flash["success"] = I18n.t("choruspro_ui.flash.refreshed_all", count: report.changed)
+          unless report.errors.empty?
+            flash["warning"] = I18n.t("choruspro_ui.flash.refresh_errors") + " " +
+                               report.errors.map { |error| "#{error.field} : #{fmt.message(error)}" }.join(" ")
+          end
         else
           flash["danger"] = messages(result)
         end
@@ -56,6 +60,7 @@ module Choruspro
           "engagement"   => view.engagement_number.presence,
           "controls"     => listed(view.controls.map { |control| Present.control(control, fmt) }),
           "submission"   => view.submission.try { |row| submission_row(row) },
+          "pending"      => view.pending.try { |row| pending_row(row) },
           "events"       => listed((view.submission.try(&.events) || [] of Api::EventView).map { |event| Present.event(event, fmt) }),
           "transport"    => transport,
           "document_url" => reverse("invoicing:document", id: view.id),
@@ -77,19 +82,39 @@ module Choruspro
         })
       end
 
+      private def pending_row(row : Api::PendingView) : Row
+        Ui.row({
+          "state"      => I18n.t(row.state_key),
+          "reference"  => row.reference,
+          "remote_id"  => row.remote_id.presence,
+          "started_at" => fmt.datetime(row.started_at),
+        })
+      end
+
       # Commandes offertes selon le droit de déposer, le transport et l'état
       # du dépôt.
       private def command_urls(view : Api::InvoiceView, transport : Bool) : Hash(String, String?)
-        urls = {"transmit_url" => nil, "refresh_url" => nil, "manual_url" => nil, "status_url" => nil} of String => String?
+        urls = {"transmit_url" => nil, "refresh_url" => nil, "manual_url" => nil, "status_url" => nil,
+                "release_url" => nil} of String => String?
         return urls unless can?(Api::TRANSMIT)
         submission = view.submission
         manual = submission.try(&.manual) || false
-        open = submission.nil? || submission.resubmittable?
         urls["transmit_url"] = Ui.url("transmit", id: view.id) if transport && view.transmittable?
         urls["refresh_url"] = Ui.url("refresh", id: view.id) if transport && submission && !manual
-        urls["manual_url"] = Ui.url("manual", id: view.id) if !view.draft? && open && view.controls.none?(&.error?)
+        urls["manual_url"] = Ui.url("manual", id: view.id) if manual_open?(view)
         urls["status_url"] = Ui.url("status", id: view.id) if manual
+        urls["release_url"] = Ui.url("release", id: view.id) if view.pending.try(&.releasable?)
         urls
+      end
+
+      # Dépôt à noter à la main : facture émise, sans dépôt, sans contrôle
+      # bloquant ; une réservation à l'issue inconnue ou acceptée (la facture
+      # a pu arriver chez Chorus Pro) ne l'empêche pas, un appel en cours si.
+      private def manual_open?(view : Api::InvoiceView) : Bool
+        return false if view.draft? || view.submission
+        pending = view.pending
+        return false if pending && pending.state == "running"
+        view.controls.none? { |control| control.error? && !(pending && control.key.includes?(".deposit_")) }
       end
     end
 
@@ -128,6 +153,13 @@ module Choruspro
     class ManualHandler < InvoiceCommand
       def post
         after(Api.note_manual(current.actor, id, Api::ManualInput.new(field("remote_id"))), id, "choruspro_ui.flash.manual")
+      end
+    end
+
+    # Lève une réservation de dépôt à l'issue inconnue.
+    class ReleaseHandler < InvoiceCommand
+      def post
+        after(Api.release(current.actor, id), id, "choruspro_ui.flash.released")
       end
     end
 

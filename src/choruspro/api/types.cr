@@ -28,11 +28,48 @@ module Choruspro
       end
     end
 
-    record EventView, action : String, status : String, detail : String, user_id : Int64?, created_at : Time do
+    # Ligne d'historique : `status` = statut local (`STATUSES`) ou, pour un
+    # paiement, statut de la facture dans la Facturation ; `remote_status` =
+    # statut brut de Chorus Pro ; `detail` = texte ou clé i18n
+    # (`choruspro.*`) traduite avec `params`.
+    record EventView, action : String, status : String, detail : String, user_id : Int64?, created_at : Time,
+      remote_status : String = "", params : Hash(String, String) = {} of String => String do
       def action_key : String
         "choruspro.actions.#{action}"
       end
+
+      # Clé i18n du statut, `nil` s'il n'y en a pas (valeur ancienne brute).
+      def status_key : String?
+        if action.in?("payment", "unpayment")
+          "invoicing.statuses.#{status}" unless status.empty?
+        elsif Config::STATUSES.includes?(status)
+          "choruspro.statuses.#{status}"
+        end
+      end
+
+      def translated_detail? : Bool
+        detail.starts_with?("choruspro.")
+      end
     end
+
+    # Dépôt par l'API réservé (D-CPP-005) : `running` (appel en cours),
+    # `uncertain` (Chorus Pro n'a pas répondu : vérifier sur le portail),
+    # `accepted` (Chorus Pro a rendu `remote_id` mais l'enregistrement local a
+    # échoué : un nouveau « Déposer » le finalise sans nouvel appel).
+    record PendingView, state : String, reference : String, remote_id : String, started_at : Time do
+      def releasable? : Bool
+        state == "uncertain"
+      end
+
+      def state_key : String
+        "choruspro.pending.#{state}"
+      end
+    end
+
+    # Relevé général : nombre de statuts changés, erreurs propres à une
+    # facture (`field` = numéro de la facture), le relevé continuant après
+    # elles.
+    record RefreshReport, changed : Int32, errors : Array(FieldError) = [] of FieldError
 
     # Dépôt d'une facture : statut local (`STATUSES`) et brut, identifiant
     # chez Chorus Pro, motif, historique ; `settled_at` : règlement complet
@@ -56,8 +93,9 @@ module Choruspro
         "choruspro.statuses.#{status}"
       end
 
-      def resubmittable? : Bool
-        Config::RESUBMITTABLE.includes?(status)
+      # Rejet, suspension ou recyclage : une action est attendue.
+      def attention? : Bool
+        Config::ATTENTION.includes?(status)
       end
     end
 
@@ -78,7 +116,8 @@ module Choruspro
       currency_code : String,
       sent_at : Time?,
       submission : SubmissionView?,
-      controls : Array(ControlView) do
+      controls : Array(ControlView),
+      pending : PendingView? = nil do
       def draft? : Bool
         number.nil?
       end
@@ -104,7 +143,7 @@ module Choruspro
       transport : String?
 
     # Compteurs : factures émises à déposer, dépôts qui demandent une action
-    # (rejet, suspension, à recycler).
+    # (rejet, suspension, à recycler, dépôt à l'issue inconnue).
     record CountsView, to_transmit : Int32, attention : Int32
 
     # Fichier produit (PDF à déposer sur le portail).

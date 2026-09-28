@@ -42,6 +42,7 @@ module Choruspro
       path "/invoices/<id:int>/refresh", Choruspro::Ui::RefreshHandler, name: "refresh"
       path "/invoices/<id:int>/manual", Choruspro::Ui::ManualHandler, name: "manual"
       path "/invoices/<id:int>/status", Choruspro::Ui::StatusHandler, name: "status"
+      path "/invoices/<id:int>/release", Choruspro::Ui::ReleaseHandler, name: "release"
       path "/settings", Choruspro::Ui::SettingsHandler, name: "settings"
       path "/settings/clear", Choruspro::Ui::ClearCredentialsHandler, name: "clear_credentials"
     end

@@ -23,9 +23,9 @@ module Choruspro
   record Structure, siret : String, name : String, engagement_required : Bool, service_required : Bool,
     services : Array(String)
 
-  # Facture remise au transport : `reference` est la clé d'idempotence (un
-  # même dépôt rejoué ne crée pas une seconde facture chez Chorus Pro),
-  # `pdf` le PDF/A-3 Factur-X du module Facturation (engagement en BT-13,
+  # Facture remise au transport : `reference` identifie la tentative dans
+  # Partiduo (journaux, simulation) ; Chorus Pro ne la reçoit pas et
+  # n'offre aucune clé d'idempotence (D-CPP-005). `pdf` le PDF/A-3 Factur-X du module Facturation (engagement en BT-13,
   # code service en BT-10), syntaxe du flux `IN_DP_E2_CII_FACTURX`.
   record Deposit, reference : String, number : String, issue_date : Time, recipient_siret : String,
     service_code : String, engagement_number : String, total_gross : BigDecimal, currency : String,
@@ -42,6 +42,9 @@ module Choruspro
   # (`choruspro.errors.transport.*`) traduite à l'affichage ; le message
   # technique ne contient jamais de secret.
   class TransportError < Exception
+    # Pas de réponse (réseau, délai, erreur 5xx) : issue d'un dépôt inconnue.
+    UNAVAILABLE = "choruspro.errors.transport.unavailable"
+
     getter key : String
     getter params : Hash(String, String)
 
@@ -65,8 +68,11 @@ module Choruspro
     # Structure publique d'un SIRET, `nil` si Chorus Pro ne la connaît pas.
     abstract def structure(credentials : Credentials, siret : String) : Structure?
 
-    # Dépose la facture ; rend son identifiant chez Chorus Pro. Idempotent
-    # sur `deposit.reference`.
+    # Dépose la facture ; rend son identifiant chez Chorus Pro. *Pas*
+    # idempotent : chaque appel peut créer un dépôt. `TransportError` de clé
+    # `UNAVAILABLE` : issue inconnue (le dépôt a pu être accepté) ; toute
+    # autre clé : dépôt certainement refusé. L'appelant réserve le dépôt
+    # avant l'appel (`Choruspro::Pending`) et ne le rejoue jamais seul.
     abstract def submit(credentials : Credentials, deposit : Deposit) : String
 
     # Statut d'une facture déposée.

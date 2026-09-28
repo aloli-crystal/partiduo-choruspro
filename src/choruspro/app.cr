@@ -34,3 +34,4 @@ module Choruspro
 end
 
 Choruspro::Transports.configure_from_env
+Choruspro::Secrets.check_configuration

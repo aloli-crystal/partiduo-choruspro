@@ -42,8 +42,10 @@ l'émission.
 
 |Dépôt
 |PDF/A-3 Factur-X du module Facturation (flux `IN_DP_E2_CII_FACTURX`),
-idempotent sur une référence par tentative ; la facture passe « envoyée »
-(canal figé). Une facture « à recycler » se dépose de nouveau.
+réservé avant l'appel (un seul dépôt à la fois par facture ; sans réponse de
+Chorus Pro, dépôt « à vérifier » sur le portail, jamais rejoué seul) ; la
+facture passe « envoyée » (canal figé). Une facture « à recycler » se
+recycle sur le portail Chorus Pro, puis son statut se relève.
 
 |Suivi
 |Statuts de Chorus Pro ramenés à six : déposée, mise à disposition, mise en
@@ -53,7 +55,7 @@ un dépôt ne se supprime pas (déclencheur PostgreSQL).
 |Paiements
 |Abonnée à `payment.matched` et `payment.unmatched` (lettrage de la
 Comptabilité) : facture réglée → dépôt noté réglé, statut « mise en
-paiement », suivi arrêté ; délettrage → retour au dernier statut relevé
+paiement », suivi arrêté ; délettrage → retour au statut d'avant le lettrage ou au dernier statut relevé
 (D-CPP-002).
 
 |Repli

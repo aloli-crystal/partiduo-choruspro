@@ -14,13 +14,16 @@ module Choruspro
     # * `suspended` : suspendue par le destinataire (`SUSPENDUE`) — à
     #   compléter sur le portail ;
     # * `to_recycle` : à recycler (`A_RECYCLER`) — mauvais destinataire ou
-    #   service, se dépose de nouveau après correction de la fiche ;
+    #   service ; se recycle *sur le portail* Chorus Pro (nouveau service ou
+    #   destinataire, sans nouveau dépôt), puis le statut se relève. Un
+    #   redépôt du même PDF (même numéro, mêmes SIRET et BT-10) serait
+    #   refusé comme doublon (D-CPP-006) ;
     # * `rejected` : rejetée (`REJETEE`), motif conservé ; la facture se
     #   corrige par un avoir.
     STATUSES = %w[submitted delivered paid suspended to_recycle rejected]
 
-    # Statuts qui permettent un nouveau dépôt de la même facture.
-    RESUBMITTABLE = %w[to_recycle]
+    # Statuts qui demandent une action (rejet, suspension, recyclage).
+    ATTENTION = %w[rejected suspended to_recycle]
 
     # Correspondance des statuts de Chorus Pro (`statutFacture`).
     REMOTE_STATUSES = {

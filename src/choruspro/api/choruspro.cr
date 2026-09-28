@@ -50,10 +50,15 @@ module Choruspro
           return Result(SettingsView).failure(FieldError.new("client_secret", ex.key, ex.params))
         end
       end
+      sealed = begin
+        Secrets.encrypt_json({"client_secret" => secret, "password" => password})
+      rescue Secrets::Error
+        return Result(SettingsView).failure(FieldError.new("client_secret", "choruspro.errors.credentials.key"))
+      end
       Partiduo::Api::Transaction.run do
         settings.client_id = client_id
         settings.login = login
-        settings.secrets = Secrets.encrypt_json({"client_secret" => secret, "password" => password})
+        settings.secrets = sealed
         settings.env = input.env
         settings.checked_at = checked
         settings.updated_by_id = actor.user_id
@@ -64,23 +69,38 @@ module Choruspro
 
     # Contrôles de la saisie ; secrets retenus (saisis, sinon enregistrés).
     private def self.credential_errors(input : CredentialsInput, settings : Settings) : {Array(FieldError), String, String}
+      errors = identity_errors(input)
+      stored = stored_secrets(settings)
+      # Illisibles (clé changée, valeur altérée) : bloquant seulement si un
+      # secret laissé vide devait être repris ; deux secrets saisis
+      # remplacent la valeur illisible.
+      if stored.nil? && (input.client_secret.strip.empty? || input.password.empty?)
+        errors << FieldError.new("client_secret", "choruspro.errors.credentials.unreadable")
+      end
+      stored ||= {} of String => String
+      secret = input.client_secret.strip.presence || stored["client_secret"]? || ""
+      password = input.password.presence || stored["password"]? || ""
+      errors << FieldError.new("client_secret", "choruspro.errors.credentials.client_secret") if secret.empty?
+      errors << FieldError.new("password", "choruspro.errors.credentials.password") if password.empty?
+      {errors, secret, password}
+    end
+
+    # Application PISTE, compte technique et environnement.
+    private def self.identity_errors(input : CredentialsInput) : Array(FieldError)
       errors = [] of FieldError
       client_id = input.client_id.strip
       login = input.login.strip
       errors << FieldError.new("client_id", "choruspro.errors.credentials.client_id") if client_id.empty? || client_id.size > 255
       errors << FieldError.new("login", "choruspro.errors.credentials.login") if login.empty? || login.size > 255
       errors << FieldError.new("env", "choruspro.errors.credentials.env") unless ENVIRONMENTS.includes?(input.env)
-      stored = {} of String => String
-      begin
-        stored = Secrets.decrypt_json(settings.secrets.to_s)
-      rescue Secrets::Error | JSON::ParseException
-        errors << FieldError.new("client_secret", "choruspro.errors.credentials.unreadable")
-      end
-      secret = input.client_secret.strip.presence || stored["client_secret"]? || ""
-      password = input.password.presence || stored["password"]? || ""
-      errors << FieldError.new("client_secret", "choruspro.errors.credentials.client_secret") if secret.empty?
-      errors << FieldError.new("password", "choruspro.errors.credentials.password") if password.empty?
-      {errors, secret, password}
+      errors
+    end
+
+    # Secrets enregistrés déchiffrés ; `nil` s'ils sont illisibles.
+    private def self.stored_secrets(settings : Settings) : Hash(String, String)?
+      Secrets.decrypt_json(settings.secrets.to_s)
+    rescue Secrets::Error | JSON::ParseException
+      nil
     end
 
     def self.clear_credentials(actor : Actor) : SettingsView
@@ -107,22 +127,31 @@ module Choruspro
     # avec leur dépôt et leurs contrôles locaux (sans appel à Chorus Pro).
     def self.invoices(actor : Actor) : Array(InvoiceView)
       Guard.authorize!(actor, READ, module_code: MODULE_CODE)
-      Deposits.documents.map { |document| Deposits.view(document) }
+      Deposits.views(Deposits.documents)
     end
 
     # Une facture, contrôlée auprès de Chorus Pro (structure destinataire,
     # engagement, service) si le transport et les identifiants le permettent.
+    # `NotFound` pour un document hors du canal `public_portal` jamais
+    # déposé : `choruspro.invoice.read` ne donne pas accès au reste de la
+    # Facturation.
     def self.invoice(actor : Actor, id : Int64) : InvoiceView
       Guard.authorize!(actor, READ, module_code: MODULE_CODE)
-      Deposits.view(Deposits.document(id), remote: true)
+      Deposits.view(Deposits.visible_document!(id), remote: true)
     end
 
+    # Compteurs, sans contrôles ni historiques : documents du canal (filtrés
+    # par PostgreSQL), dépôts et réservations en deux requêtes.
     def self.counts(actor : Actor) : CountsView
       Guard.authorize!(actor, READ, module_code: MODULE_CODE)
-      views = invoices(actor)
+      documents = Deposits.documents
+      ids = documents.map(&.id)
+      return CountsView.new(0, 0) if ids.empty?
+      statuses = Submission.filter(invoice_id__in: ids).to_a.to_h { |row| {row.invoice_id!.to_i64, row.status.to_s} }
+      pendings = Pending.filter(invoice_id__in: ids).to_a.to_h { |row| {row.invoice_id!.to_i64, row} }
       CountsView.new(
-        to_transmit: views.count { |view| !view.draft? && (view.submission.nil? || view.submission.try(&.resubmittable?)) && view.sent_at.nil? },
-        attention: views.count { |view| view.submission.try(&.status.in?("rejected", "suspended", "to_recycle")) || false },
+        to_transmit: documents.count { |document| !document.draft? && document.sent_at.nil? && !statuses.has_key?(document.id) && !pendings.has_key?(document.id) },
+        attention: statuses.values.count(&.in?(Config::ATTENTION)) + pendings.values.count { |row| row.accepted? || row.uncertain? },
       )
     end
 
@@ -130,8 +159,7 @@ module Choruspro
     # transport.
     def self.pdf(actor : Actor, id : Int64) : FileView
       Guard.authorize!(actor, READ, module_code: MODULE_CODE)
-      document = Deposits.document(id)
-      raise Partiduo::Api::NotFound.new("choruspro_invoice", id) unless document.issue_channel == Deposits::CHANNEL
+      Deposits.visible_document!(id)
       file = Partiduo::Api::Invoicing.document_pdf(Deposits::SYSTEM, id)
       FileView.new(file.filename, file.content_type, file.content)
     end
@@ -140,7 +168,9 @@ module Choruspro
 
     # Dépose la facture sur Chorus Pro puis la marque envoyée. Refus :
     # brouillon, canal autre que `public_portal`, SIRET du client absent, déjà
-    # déposée (sauf « à recycler »), déjà envoyée autrement, transport ou
+    # déposée (« à recycler » : sur le portail), déjà envoyée autrement, dépôt
+    # réservé (en cours ou à l'issue inconnue ; un dépôt accepté mais pas
+    # enregistré est finalisé sans nouvel appel), transport ou
     # identifiants absents, structure inconnue, engagement ou service exigé
     # absent, service inconnu, erreur de Chorus Pro (notée dans
     # l'historique).
@@ -159,7 +189,7 @@ module Choruspro
       begin
         Deposits.refresh!(row, actor)
       rescue ex : TransportError
-        Deposits.log(row.id, id, "error", "", ex.key, actor)
+        Deposits.log(row.id, id, "error", "", ex.key, actor, params: ex.params)
         return Result(InvoiceView).failure(FieldError.new(FieldError::BASE, ex.key, ex.params))
       end
       Result(InvoiceView).success(Deposits.view(Deposits.document(id)))
@@ -167,17 +197,38 @@ module Choruspro
 
     # Relève les statuts de toutes les factures déposées par l'API et pas
     # encore réglées (ni mises en paiement, ni rejetées, ni réglées d'après
-    # le lettrage) ; rend le nombre de changements.
-    def self.refresh_all(actor : Actor) : Result(Int32)
+    # le lettrage). Une erreur propre à une facture (inconnue, refusée) est
+    # notée dans son historique et le relevé continue ; le rapport rend le
+    # nombre de changements et ces erreurs (`field` = numéro de la facture). Échec
+    # seulement si le transport lui-même manque ou ne répond pas.
+    def self.refresh_all(actor : Actor) : Result(RefreshReport)
       Guard.authorize!(actor, TRANSMIT, module_code: MODULE_CODE)
       changed = 0
+      errors = [] of FieldError
       Submission.filter(manual: false, settled_at__isnull: true).exclude(status__in: %w[paid rejected]).order(:id).each do |row|
         changed += 1 if Deposits.refresh!(row, actor)
       rescue ex : TransportError
-        Deposits.log(row.id, row.invoice_id!.to_i64, "error", "", ex.key, actor)
-        return Result(Int32).failure(FieldError.new(FieldError::BASE, ex.key, ex.params))
+        Deposits.log(row.id, row.invoice_id!.to_i64, "error", "", ex.key, actor, params: ex.params)
+        if GLOBAL_ERRORS.includes?(ex.key)
+          return Result(RefreshReport).failure(FieldError.new(FieldError::BASE, ex.key, ex.params))
+        end
+        errors << FieldError.new(row.number.to_s, ex.key, ex.params)
       end
-      Result(Int32).success(changed)
+      Result(RefreshReport).success(RefreshReport.new(changed, errors))
+    end
+
+    # Erreurs du transport qui valent pour tous les dépôts : le relevé
+    # général s'arrête.
+    GLOBAL_ERRORS = %w[choruspro.controls.no_transport choruspro.controls.no_credentials
+      choruspro.errors.transport.credentials choruspro.errors.transport.unavailable]
+
+    # Lève une réservation de dépôt à l'issue inconnue, après vérification
+    # sur le portail que Chorus Pro n'a pas reçu la facture ; elle pourra être
+    # déposée de nouveau. Refus : aucune réservation, appel encore en cours,
+    # dépôt accepté (à finaliser par `transmit`).
+    def self.release(actor : Actor, id : Int64) : Result(InvoiceView)
+      Guard.authorize!(actor, TRANSMIT, module_code: MODULE_CODE)
+      Deposits.release!(id, actor)
     end
 
     # Dépôt fait sur le portail Chorus Pro, noté à la main (repli).

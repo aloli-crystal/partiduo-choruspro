@@ -14,8 +14,9 @@ module Choruspro
   #   suivi des statuts s'arrête pour lui ;
   # * règlement partiel : seulement noté dans l'historique ;
   # * délettrage : le règlement est retiré ; un statut `paid` venu du seul
-  #   lettrage (Chorus Pro n'a pas dit `MISE_EN_PAIEMENT`) revient au
-  #   dernier statut relevé.
+  #   lettrage (Chorus Pro n'a pas dit `MISE_EN_PAIEMENT`) revient au statut
+  #   qui le précédait (`settled_from`, D-CPP-008), ou au dernier statut
+  #   relevé depuis s'il est plus récent (dépôt par l'API).
   #
   # Idempotent : un même lettrage n'est noté qu'une fois par facture. Aucun
   # effet extérieur (pas d'appel à Chorus Pro dans la transaction). Interne.
@@ -37,6 +38,7 @@ module Choruspro
         next unless document.status == "paid" && row.settled_at.nil?
         row.settled_at = Time.utc
         if SETTLEABLE.includes?(row.status.to_s)
+          row.settled_from = row.status.to_s
           row.status = "paid"
           row.reason = ""
           row.status_at = Time.utc
@@ -50,15 +52,35 @@ module Choruspro
       each_submission(event) do |row, document|
         next if row.settled_at.nil? || document.status == "paid"
         row.settled_at = nil
-        if row.status == "paid" && Config.local_status(row.remote_status.to_s) != "paid"
-          previous = Config.local_status(row.remote_status.to_s) || "submitted"
+        previous = previous_status(row)
+        if row.status == "paid" && previous
           row.status = previous
-          row.reason = previous.in?("rejected", "suspended") ? row.remote_status.to_s : ""
+          row.reason = previous.in?("rejected", "suspended") ? previous_reason(row) : ""
           row.status_at = Time.utc
         end
+        row.settled_from = ""
         row.save!
         Deposits.log(row.id, row.invoice_id!.to_i64, "unpayment", document.status, matching_id, actor(event))
       end
+    end
+
+    # Statut à rétablir au délettrage, `nil` s'il faut garder `paid` (mise
+    # en paiement dite par Chorus Pro, ou statut noté à la main avant le
+    # lettrage). Dépôt par l'API : le dernier statut relevé l'emporte (il a
+    # pu changer pendant le règlement) ; dépôt noté à la main : celui d'avant
+    # le lettrage.
+    private def self.previous_status(row : Submission) : String?
+      remote = row.manual ? nil : Config.local_status(row.remote_status.to_s)
+      return if remote == "paid"
+      remote || row.settled_from.to_s.presence
+    end
+
+    # Motif d'une suspension rétablie : celui du dernier changement de
+    # statut noté.
+    private def self.previous_reason(row : Submission) : String
+      last = SubmissionEvent.filter(invoice_id: row.invoice_id, action: "status").order(:id).to_a.reverse!
+        .find { |event| event.status.in?("rejected", "suspended") && !event.detail.to_s.empty? }
+      last.try(&.detail.to_s).presence || row.remote_status.to_s.presence || "—"
     end
 
     # Dépôts des factures citées par l'événement (`sources` :

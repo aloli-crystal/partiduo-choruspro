@@ -49,7 +49,7 @@ describe "Chorus Pro — paiements (payment.matched, D-CPP-002)" do
 
     # Réglée : plus relevée ; un statut en retard ne la fait pas revenir.
     calls = S.chorus.calls
-    Api.refresh_all(S.admin).value!.should eq(0)
+    Api.refresh_all(S.admin).value!.changed.should eq(0)
     S.chorus.calls.should eq(calls)
     Api.refresh(S.admin, invoice.id).value!
     submission_of(Api.invoice(S.admin, invoice.id)).status.should eq("paid")

@@ -18,6 +18,10 @@ en:
       suspended: "Suspended"
       to_recycle: "To be recycled"
       rejected: "Rejected"
+    pending:
+      running: "Submission in progress"
+      uncertain: "Submission without answer, to check"
+      accepted: "Submission accepted, to record"
     environments:
       qualification: "Qualification (sandbox)"
       production: "Production"
@@ -28,6 +32,8 @@ en:
       error: "Error"
       payment: "Payment matched"
       unpayment: "Payment unmatched"
+      uncertain: "Submission without answer"
+      released: "Reservation released"
     controls:
       not_chorus_channel: "The issue channel of this document is not Chorus Pro."
       siret_missing: "Enter the SIRET of customer %{customer} on its card: Chorus Pro identifies the public body by its SIRET."
@@ -41,6 +47,11 @@ en:
       engagement_required: "%{structure} requires a commitment number: the invoice has no order reference."
       service_required: "%{structure} requires a service code: the invoice has no buyer reference."
       service_unknown: "Service %{service} does not exist at %{structure}."
+      recycle_on_portal: "Invoice to recycle: correct the recipient or service on the Chorus Pro portal (recycling, no new submission), then refresh the status."
+      deposit_running: "Submission to Chorus Pro in progress: wait for it to finish before any other action."
+      deposit_uncertain: "Chorus Pro did not answer the submission: check on the portal whether the invoice is there. If so, note the submission by hand; otherwise, release the reservation to submit it again."
+      deposit_accepted: "Chorus Pro accepted the submission (%{remote_id}) but recording it failed: submit again to record it, without sending it again."
+      no_pending: "No reserved submission for this invoice."
     errors:
       credentials:
         client_id: "Enter the PISTE application ID."
@@ -49,6 +60,7 @@ en:
         unreadable: "Saved credentials unreadable: enter them again."
         client_secret: "Enter the PISTE application secret."
         password: "Enter the technical account password."
+        key: "Malformed PARTIDUO_CHORUSPRO_KEY encryption key (64 hexadecimal characters expected): fix the configuration."
       manual:
         remote_id: "Chorus Pro number too long (128 characters at most)."
       status:
@@ -57,6 +69,8 @@ en:
         not_remote: "This submission was noted by hand: note its status."
         unknown: "Unknown status."
         reason: "Enter the reason for the rejection or suspension."
+      deposit:
+        unrecorded: "Chorus Pro accepted the submission (%{remote_id}) but recording it failed; submit again to record it, without sending it again."
       transport:
         credentials: "Chorus Pro refuses the credentials (PISTE or technical account)."
         unavailable: "Chorus Pro does not answer; try again later."

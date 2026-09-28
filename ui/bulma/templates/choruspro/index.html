@@ -18,7 +18,7 @@
       <td>{{ invoice.customer }}</td>
       <td class="pd-hide-s pd-mono">{% if invoice.siret %}{{ invoice.siret }}{% else %}—{% endif %}</td>
       <td class="has-text-right pd-mono">{{ invoice.total }} {{ invoice.currency }}</td>
-      <td>{% if invoice.status %}<span class="tag {{ invoice.status_class }} is-light" data-choruspro-status="{{ invoice.status }}">{{ invoice.status_label }}</span>{% elsif invoice.draft %}<span class="tag is-light">{% translate "choruspro_ui.draft" %}</span>{% elsif invoice.ready %}<span class="tag is-success is-light">{% translate "choruspro_ui.invoices.ready" %}</span>{% else %}<span class="tag is-danger is-light">{{ invoice.blocking }}</span>{% endif %}</td>
+      <td>{% if invoice.status %}<span class="tag {{ invoice.status_class }} is-light" data-choruspro-status="{{ invoice.status }}">{{ invoice.status_label }}</span>{% elsif invoice.pending %}<span class="tag is-warning is-light" data-choruspro-pending>{{ invoice.pending }}</span>{% elsif invoice.draft %}<span class="tag is-light">{% translate "choruspro_ui.draft" %}</span>{% elsif invoice.ready %}<span class="tag is-success is-light">{% translate "choruspro_ui.invoices.ready" %}</span>{% else %}<span class="tag is-danger is-light">{{ invoice.blocking }}</span>{% endif %}</td>
     </tr>{% endfor %}</tbody>
   </table></div>
   {% else %}<div class="pd-body"><p class="pd-muted">{% translate "choruspro_ui.invoices.none" %}</p></div>{% endif %}

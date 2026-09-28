@@ -3,8 +3,10 @@
 module Choruspro
   # Chorus Pro simulé pour les specs (ADR-004 D9 révisé) : identifiants de
   # test, annuaire des structures publiques (engagement et service exigés
-  # ou non), dépôts idempotents sur la référence, statuts programmés, pannes
-  # à la demande. Aucun appel réseau.
+  # ou non), dépôts *non* idempotents (comme l'API de dépôt de flux : chaque
+  # appel crée une facture), statuts programmés, pannes à la demande, dont
+  # une réponse perdue après un dépôt accepté (`lose_answer`). Aucun appel
+  # réseau.
   class SimulatedChorusPro < Transport
     CLIENT_ID     = "piste-app-test"
     CLIENT_SECRET = "secret-piste-0123456789"
@@ -25,6 +27,10 @@ module Choruspro
     getter states = {} of String => RemoteStatus
     property failure : String? = nil
     property refusal : String? = nil
+    # Le prochain dépôt est accepté, mais la réponse se perd (délai dépassé).
+    property? lose_answer = false
+    # Appelé au début de chaque dépôt (dépôts simultanés dans les specs).
+    property on_submit : Proc(Nil)? = nil
     getter calls = 0
 
     def name : String
@@ -50,13 +56,15 @@ module Choruspro
       if reason = refusal
         raise TransportError.new("choruspro.errors.transport.refused", {"reason" => reason})
       end
-      if existing = remote_ids[deposit.reference]?
-        return existing
-      end
+      on_submit.try(&.call)
       remote_id = "CPP-#{100000 + deposits.size}"
       deposits[remote_id] = deposit
       remote_ids[deposit.reference] = remote_id
       states[remote_id] = RemoteStatus.new("DEPOSEE", at: Time.utc)
+      if lose_answer?
+        @lose_answer = false
+        raise TransportError.new(TransportError::UNAVAILABLE, message: "délai dépassé")
+      end
       remote_id
     end
 

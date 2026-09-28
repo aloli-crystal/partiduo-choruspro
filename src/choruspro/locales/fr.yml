@@ -18,6 +18,10 @@ fr:
       suspended: "Suspendue"
       to_recycle: "À recycler"
       rejected: "Rejetée"
+    pending:
+      running: "Dépôt en cours"
+      uncertain: "Dépôt sans réponse, à vérifier"
+      accepted: "Dépôt accepté, à enregistrer"
     environments:
       qualification: "Qualification (bac à sable)"
       production: "Production"
@@ -28,6 +32,8 @@ fr:
       error: "Erreur"
       payment: "Paiement lettré"
       unpayment: "Paiement délettré"
+      uncertain: "Dépôt sans réponse"
+      released: "Réservation levée"
     controls:
       not_chorus_channel: "Le canal d'émission de ce document n'est pas Chorus Pro."
       siret_missing: "Indiquez le SIRET du client %{customer} sur sa fiche : Chorus Pro identifie la structure publique par son SIRET."
@@ -41,6 +47,11 @@ fr:
       engagement_required: "%{structure} exige un numéro d'engagement : il manque la référence de commande de la facture."
       service_required: "%{structure} exige un code service : il manque la référence acheteur de la facture."
       service_unknown: "Le service %{service} n'existe pas chez %{structure}."
+      recycle_on_portal: "Facture à recycler : corrigez le destinataire ou le service sur le portail Chorus Pro (recyclage, sans nouveau dépôt), puis relevez le statut."
+      deposit_running: "Dépôt en cours sur Chorus Pro : attendez sa fin avant toute autre action."
+      deposit_uncertain: "Chorus Pro n'a pas répondu au dépôt : vérifiez sur le portail si la facture y figure. Si oui, notez le dépôt à la main ; sinon, levez la réservation pour la déposer de nouveau."
+      deposit_accepted: "Chorus Pro a accepté le dépôt (%{remote_id}) mais son enregistrement a échoué : déposez de nouveau pour l'enregistrer, sans nouvel envoi."
+      no_pending: "Aucun dépôt réservé pour cette facture."
     errors:
       credentials:
         client_id: "Indiquez l'identifiant de l'application PISTE."
@@ -49,6 +60,7 @@ fr:
         unreadable: "Identifiants enregistrés illisibles : saisissez-les de nouveau."
         client_secret: "Indiquez le secret de l'application PISTE."
         password: "Indiquez le mot de passe du compte technique."
+        key: "Clé de chiffrement PARTIDUO_CHORUSPRO_KEY mal formée (64 caractères hexadécimaux attendus) : corrigez la configuration."
       manual:
         remote_id: "Numéro Chorus Pro trop long (128 caractères au plus)."
       status:
@@ -57,6 +69,8 @@ fr:
         not_remote: "Ce dépôt a été noté à la main : notez son statut."
         unknown: "Statut inconnu."
         reason: "Indiquez le motif du rejet ou de la suspension."
+      deposit:
+        unrecorded: "Chorus Pro a accepté le dépôt (%{remote_id}) mais son enregistrement a échoué ; déposez de nouveau pour l'enregistrer, sans nouvel envoi."
       transport:
         credentials: "Chorus Pro refuse les identifiants (PISTE ou compte technique)."
         unavailable: "Chorus Pro ne répond pas ; réessayez plus tard."

@@ -12,7 +12,7 @@ d'accès en première ligne, vues immuables, `Result` à erreurs par champ,
 |===
 |Permission |Usage
 |`choruspro.invoice.read` |factures au canal Chorus Pro, statut, PDF à déposer
-|`choruspro.invoice.transmit` |dépôt, relevé des statuts, dépôt et statut notés à la main
+|`choruspro.invoice.transmit` |dépôt, relevé des statuts, dépôt et statut notés à la main, réservation levée
 |`choruspro.settings.manage` |identifiants PISTE et compte technique
 |===
 
@@ -23,36 +23,67 @@ d'accès en première ligne, vues immuables, `Result` à erreurs par champ,
   `checked_at`, `transport` (nom du transport branché, `nil` sinon).
 * `save_credentials(actor, CredentialsInput)` — secrets chiffrés ; un secret
   vide garde celui enregistré ; vérifiés auprès de Chorus Pro si le
-  transport est branché (`choruspro.errors.transport.credentials`).
+  transport est branché (`choruspro.errors.transport.credentials`) ;
+  `choruspro.errors.credentials.key` si `PARTIDUO_CHORUSPRO_KEY` est définie
+  mais mal formée (D-CPP-009).
 * `clear_credentials(actor)`.
 
 == Factures et dépôts
 
+Un document hors du canal `public_portal`, jamais déposé ni réservé, est
+introuvable (`Partiduo::Api::NotFound`) pour `invoice`, `pdf`, `transmit`,
+`note_manual` et `release` : `choruspro.invoice.read` ne donne pas accès au
+reste de la Facturation (D-CPP-004).
+
 * `invoices(actor) : Array(InvoiceView)` — documents fiscaux au canal
-  `public_portal`, brouillons compris, contrôles locaux.
+  `public_portal` (filtrés par PostgreSQL, `DocumentQuery#issue_channel`),
+  brouillons compris, contrôles locaux ; dépôts, réservations et
+  historiques lus en trois requêtes.
 * `invoice(actor, id) : InvoiceView` — contrôles auprès de Chorus Pro
-  (structure, engagement, service) si possible.
+  (structure, engagement, service) si possible ; `InvoiceView#pending` :
+  réservation en cours (`PendingView`, états `running`, `uncertain`,
+  `accepted`).
 * `pdf(actor, id) : FileView` — PDF/A-3 Factur-X à déposer sur le portail.
-* `transmit(actor, id) : Result(InvoiceView)` — dépôt puis
-  `Partiduo::Api::Invoicing.mark_sent` ; refus par contrôle
+* `transmit(actor, id) : Result(InvoiceView)` — réservation
+  (`choruspro_pending`, une par facture), dépôt, puis enregistrement et
+  `Partiduo::Api::Invoicing.mark_sent` (D-CPP-005). Refus par contrôle
   (`choruspro.controls.*`) ou erreur du transport
-  (`choruspro.errors.transport.*`, notée dans l'historique).
-* `refresh(actor, id)`, `refresh_all(actor) : Result(Int32)` — statuts ;
-  `refresh_all` saute les factures mises en paiement, rejetées ou réglées
-  d'après le lettrage. Un transport qui n'apprend l'identifiant définitif
-  qu'au suivi (flux PISTE) le rend dans `RemoteStatus#remote_id`, retenu à
-  la place de `flux:<numéro>`.
+  (`choruspro.errors.transport.*`, notée dans l'historique avec ses
+  paramètres). Pas de réponse : réservation `uncertain`
+  (`choruspro.controls.deposit_uncertain`), jamais rejouée seule. Dépôt
+  accepté mais enregistrement en échec
+  (`choruspro.errors.deposit.unrecorded`, paramètre `remote_id`) : un
+  nouveau `transmit` finalise sans nouvel appel.
+* `release(actor, id) : Result(InvoiceView)` — lève une réservation
+  `uncertain` (facture absente du portail) ; refus `no_pending`,
+  `deposit_running`, `deposit_accepted`.
+* `refresh(actor, id)`, `refresh_all(actor) : Result(RefreshReport)` —
+  statuts ; `refresh_all` saute les factures mises en paiement, rejetées ou
+  réglées d'après le lettrage, continue après l'erreur propre à une facture
+  (`RefreshReport#errors`, `field` = numéro) et n'échoue que si le transport
+  manque ou ne répond pas. Un transport qui n'apprend l'identifiant
+  définitif qu'au suivi (flux PISTE) le rend dans `RemoteStatus#remote_id`,
+  retenu à la place de `flux:<numéro>`.
 * `note_manual(actor, id, ManualInput)`, `note_status(actor, id,
-  StatusInput)` — repli sans transport.
-* `counts(actor) : CountsView` — à déposer, à reprendre.
+  StatusInput)` — repli sans transport ; `note_manual` lève aussi une
+  réservation `uncertain` ou `accepted` (facture retrouvée sur le portail).
+* `counts(actor) : CountsView` — à déposer, à reprendre (rejet, suspension,
+  recyclage, réservation sans réponse ou à enregistrer), sans contrôles ni
+  historiques.
+* Historique (`SubmissionView#events`, `EventView`) : `status` = statut
+  local (ou statut de la facture pour un paiement), `remote_status` = statut
+  brut de Chorus Pro, `detail` + `params` = motif traduisible (D-CPP-007).
 
 == Contrôles (`choruspro.controls.*`)
 
 `not_chorus_channel`, `siret_missing`, `draft` (avertissement),
 `references_hint` (avertissement, brouillon sans références),
-`already_submitted`, `already_sent`, `no_transport` (avertissement à
-l'écran, refus au dépôt), `no_credentials`, `structure_unknown`,
-`engagement_required`, `service_required`, `service_unknown`.
+`already_submitted`, `recycle_on_portal` (« à recycler » : recyclage sur le
+portail, pas de nouveau dépôt, D-CPP-006), `already_sent`,
+`deposit_running`, `deposit_uncertain`, `deposit_accepted` (avertissement),
+`no_transport` (avertissement à l'écran, refus au dépôt), `no_credentials`,
+`structure_unknown`, `engagement_required`, `service_required`,
+`service_unknown` ; `no_pending` (refus de `release`).
 
 == Statuts
 
@@ -66,10 +97,13 @@ l'écran, refus au dépôt), `no_credentials`, `structure_unknown`,
   par lettrage et statut) ; facture réglée → `SubmissionView#settled_at`,
   statut `paid` s'il était `submitted`, `delivered` ou `suspended`.
 * `payment.unmatched` : règlement retiré (`unpayment`), statut `paid` venu du
-  seul lettrage ramené au dernier statut relevé. DECISIONS D-CPP-002.
+  seul lettrage ramené au statut qui le précédait (`settled_from`), ou au
+  dernier statut relevé par l'API s'il est plus récent. DECISIONS D-CPP-002,
+  D-CPP-008.
 
 == Transports
 
-`Choruspro::Transport` (abstrait), `Choruspro::PisteTransport` (API PISTE,
+`Choruspro::Transport` (abstrait ; `submit` n'est *pas* idempotent,
+`TransportError::UNAVAILABLE` = issue inconnue), `Choruspro::PisteTransport` (API PISTE,
 branché par `PARTIDUO_CHORUSPRO_TRANSPORT=piste`, D-CPP-001), Chorus Pro
 simulé des specs.

@@ -52,6 +52,7 @@ module Choruspro
       def self.invoice(view : Api::InvoiceView, fmt : PartiduoUi::Format) : Row
         submission = view.submission
         status = submission.try(&.status)
+        pending = view.pending
         blocking = view.controls.count(&.error?)
         Ui.row({
           "url"          => Ui.url("invoice", id: view.id),
@@ -65,20 +66,27 @@ module Choruspro
           "status"       => status,
           "status_label" => status.try { |code| I18n.t("choruspro.statuses.#{code}") },
           "status_class" => Ui.status_class(status),
+          "pending"      => pending.try { |row| I18n.t(row.state_key) },
           "blocking"     => blocking > 0 ? I18n.t("choruspro_ui.invoices.blocking", count: blocking) : nil,
-          "ready"        => view.transmittable? && submission.nil? ? "1" : nil,
+          "ready"        => view.transmittable? && submission.nil? && pending.nil? ? "1" : nil,
           "draft"        => view.draft? ? "1" : nil,
         })
       end
 
+      # Ligne d'historique : statut local traduit, statut brut de Chorus Pro
+      # à part, motif traduit avec ses paramètres (D-CPP-007).
       def self.event(event : Api::EventView, fmt : PartiduoUi::Format) : Row
         detail = event.detail
-        detail = I18n.t(detail) if detail.starts_with?("choruspro.")
+        if event.translated_detail?
+          detail = fmt.message(Partiduo::Api::FieldError.new(Partiduo::Api::FieldError::BASE, detail, event.params))
+        end
+        status = event.status_key.try { |key| I18n.t(key) } || event.status.presence
         Ui.row({
-          "at"     => fmt.datetime(event.created_at),
-          "action" => I18n.t(event.action_key),
-          "status" => event.status.presence,
-          "detail" => detail.presence,
+          "at"            => fmt.datetime(event.created_at),
+          "action"        => I18n.t(event.action_key),
+          "status"        => status,
+          "remote_status" => event.remote_status.presence,
+          "detail"        => detail.presence,
         })
       end
     end

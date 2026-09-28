@@ -18,6 +18,10 @@ nl:
       suspended: "Opgeschort"
       to_recycle: "Te recycleren"
       rejected: "Geweigerd"
+    pending:
+      running: "Indiening bezig"
+      uncertain: "Indiening zonder antwoord, te controleren"
+      accepted: "Indiening aanvaard, te registreren"
     environments:
       qualification: "Kwalificatie (testomgeving)"
       production: "Productie"
@@ -28,6 +32,8 @@ nl:
       error: "Fout"
       payment: "Betaling afgepunt"
       unpayment: "Afpunting van betaling ongedaan gemaakt"
+      uncertain: "Indiening zonder antwoord"
+      released: "Reservering vrijgegeven"
     controls:
       not_chorus_channel: "Het uitgiftekanaal van dit document is niet Chorus Pro."
       siret_missing: "Vul het SIRET-nummer van klant %{customer} in op de fiche: Chorus Pro identificeert de overheidsinstantie aan de hand van haar SIRET."
@@ -41,6 +47,11 @@ nl:
       engagement_required: "%{structure} vereist een verbintenisnummer: de bestelreferentie van de factuur ontbreekt."
       service_required: "%{structure} vereist een dienstcode: de referentie van de koper ontbreekt."
       service_unknown: "Dienst %{service} bestaat niet bij %{structure}."
+      recycle_on_portal: "Te recycleren factuur: verbeter de ontvanger of de dienst op het portaal van Chorus Pro (recyclage, zonder nieuwe indiening) en haal daarna de status op."
+      deposit_running: "Indiening bij Chorus Pro bezig: wacht tot ze klaar is."
+      deposit_uncertain: "Chorus Pro heeft niet geantwoord op de indiening: controleer op het portaal of de factuur er staat. Zo ja, noteer de indiening handmatig; zo niet, geef de reservering vrij om ze opnieuw in te dienen."
+      deposit_accepted: "Chorus Pro heeft de indiening aanvaard (%{remote_id}) maar de registratie mislukte: dien opnieuw in om ze te registreren, zonder nieuwe verzending."
+      no_pending: "Geen gereserveerde indiening voor deze factuur."
     errors:
       credentials:
         client_id: "Vul de identificatie van de PISTE-toepassing in."
@@ -49,6 +60,7 @@ nl:
         unreadable: "Opgeslagen gegevens onleesbaar: vul ze opnieuw in."
         client_secret: "Vul het geheim van de PISTE-toepassing in."
         password: "Vul het wachtwoord van de technische account in."
+        key: "Misvormde versleutelingssleutel PARTIDUO_CHORUSPRO_KEY (64 hexadecimale tekens verwacht): verbeter de configuratie."
       manual:
         remote_id: "Chorus Pro-nummer te lang (hoogstens 128 tekens)."
       status:
@@ -57,6 +69,8 @@ nl:
         not_remote: "Deze indiening werd handmatig genoteerd: noteer de status."
         unknown: "Onbekende status."
         reason: "Vul de reden van de weigering of opschorting in."
+      deposit:
+        unrecorded: "Chorus Pro heeft de indiening aanvaard (%{remote_id}) maar de registratie mislukte; dien opnieuw in om ze te registreren, zonder nieuwe verzending."
       transport:
         credentials: "Chorus Pro weigert de gegevens (PISTE of technische account)."
         unavailable: "Chorus Pro antwoordt niet; probeer later opnieuw."

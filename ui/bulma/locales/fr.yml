@@ -14,6 +14,7 @@ fr:
       document: "Voir la facture"
       pdf: "PDF à déposer"
       manual: "Noter le dépôt"
+      release: "Lever la réservation"
     invoices:
       title: "Factures aux clients publics"
       none: "Aucune facture au canal Chorus Pro."
@@ -46,6 +47,10 @@ fr:
       manual_help: "Après avoir déposé le PDF sur le portail Chorus Pro, notez le dépôt : la facture passe envoyée et son canal est figé."
       status_title: "Statut noté à la main"
       history: "Historique"
+      pending_title: "Dépôt réservé"
+      reference: "Référence de la tentative"
+      started_at: "Commencé le"
+      release_help: "Seulement si la facture n'apparaît pas sur le portail Chorus Pro : elle pourra être déposée de nouveau."
       at: "Date"
       event: "Événement"
       detail: "Détail"
@@ -57,6 +62,8 @@ fr:
         other: "%{count} statuts changés."
       manual: "Dépôt noté ; facture marquée envoyée."
       status: "Statut noté."
+      released: "Réservation levée : la facture peut être déposée de nouveau."
+      refresh_errors: "Statuts non relevés :"
       credentials: "Identifiants enregistrés."
       cleared: "Identifiants effacés."
     settings:
