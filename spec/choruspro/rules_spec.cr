@@ -5,8 +5,9 @@ require "../spec_helper"
 # Règles du contrat `Choruspro::Api` au-delà du parcours nominal :
 # extension inactive ou sans sa dépendance, permissions de chaque commande,
 # brouillons, dépôt noté à la main, relevé des statuts, identifiants et
-# secrets, compteurs. (NOALYSS n'a pas de Chorus Pro : les règles viennent de
-# l'ADR-004 D9 révisé et de la documentation publique de Chorus Pro.)
+# secrets, compteurs. (L'application d'origine n'a pas de Chorus Pro : les
+# règles viennent de l'ADR-004 D9 révisé et de la documentation publique de
+# Chorus Pro.)
 
 private alias S = Choruspro::SpecSupport
 private alias Api = Choruspro::Api

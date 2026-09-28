@@ -104,4 +104,14 @@ describe "Conventions de l'extension Chorus Pro" do
     end
     used.reject { |item| known.includes?(item.split(' ').last) }.should be_empty
   end
+
+  it "ne cite pas le logiciel d'origine hors documentation (*.adoc, *.md)" do
+    # Le nom est assemblé pour que ce fichier ne le contienne pas lui-même.
+    name = "no" + "alyss"
+    output = IO::Memory.new
+    status = Process.run("git", ["grep", "-il", name, "--", ".", ":!*.adoc", ":!*.md"],
+      chdir: Choruspro::SpecSupport::ROOT, output: output)
+    status.exit_code.should be <= 1
+    output.to_s.lines.should be_empty
+  end
 end
