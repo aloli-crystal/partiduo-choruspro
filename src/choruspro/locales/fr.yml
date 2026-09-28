@@ -1,0 +1,62 @@
+fr:
+  choruspro:
+    module:
+      name: "Chorus Pro (factures aux clients publics)"
+    permissions:
+      invoice:
+        read: "Voir les factures aux clients publics et leur statut Chorus Pro"
+        transmit: "Déposer les factures sur Chorus Pro et relever leur statut"
+      settings:
+        manage: "Paramétrer Chorus Pro (PISTE, compte technique)"
+    menu:
+      invoices: "Chorus Pro"
+      settings: "Chorus Pro"
+    statuses:
+      submitted: "Déposée"
+      delivered: "Mise à disposition"
+      paid: "Mise en paiement"
+      suspended: "Suspendue"
+      to_recycle: "À recycler"
+      rejected: "Rejetée"
+    environments:
+      qualification: "Qualification (bac à sable)"
+      production: "Production"
+    actions:
+      submitted: "Dépôt par l'API"
+      status: "Changement de statut"
+      manual: "Dépôt noté à la main"
+      error: "Erreur"
+    controls:
+      not_chorus_channel: "Le canal d'émission de ce document n'est pas Chorus Pro."
+      siret_missing: "Indiquez le SIRET du client %{customer} sur sa fiche : Chorus Pro identifie la structure publique par son SIRET."
+      draft: "Brouillon : émettez la facture avant de la déposer."
+      references_hint: "Chorus Pro peut exiger un numéro d'engagement (référence de commande) et un code service (référence acheteur) : renseignez-les avant d'émettre, ils sont imprimés sur la facture."
+      already_submitted: "Facture déjà déposée sur Chorus Pro (statut : %{status})."
+      already_sent: "Facture déjà marquée envoyée hors de Chorus Pro."
+      no_transport: "Connexion à Chorus Pro non disponible : déposez le PDF sur le portail, puis notez le dépôt."
+      no_credentials: "Enregistrez les identifiants PISTE et le compte technique dans les paramètres de Chorus Pro."
+      structure_unknown: "Chorus Pro ne connaît aucune structure publique de SIRET %{siret}."
+      engagement_required: "%{structure} exige un numéro d'engagement : il manque la référence de commande de la facture."
+      service_required: "%{structure} exige un code service : il manque la référence acheteur de la facture."
+      service_unknown: "Le service %{service} n'existe pas chez %{structure}."
+    errors:
+      credentials:
+        client_id: "Indiquez l'identifiant de l'application PISTE."
+        login: "Indiquez l'identifiant du compte technique."
+        env: "Environnement inconnu."
+        unreadable: "Identifiants enregistrés illisibles : saisissez-les de nouveau."
+        client_secret: "Indiquez le secret de l'application PISTE."
+        password: "Indiquez le mot de passe du compte technique."
+      manual:
+        remote_id: "Numéro Chorus Pro trop long (128 caractères au plus)."
+      status:
+        no_submission: "Aucun dépôt pour cette facture."
+        not_manual: "Ce dépôt est suivi par l'API : relevez son statut."
+        not_remote: "Ce dépôt a été noté à la main : notez son statut."
+        unknown: "Statut inconnu."
+        reason: "Indiquez le motif du rejet ou de la suspension."
+      transport:
+        credentials: "Chorus Pro refuse les identifiants (PISTE ou compte technique)."
+        unavailable: "Chorus Pro ne répond pas ; réessayez plus tard."
+        refused: "Chorus Pro refuse la facture : %{reason}"
+        unknown_invoice: "Chorus Pro ne connaît pas cette facture."

@@ -1,0 +1,56 @@
+= Contrat de l'extension Chorus Pro (`Choruspro::Api`)
+:toc: left
+:toc-title: Table des matières
+
+Sur le modèle de `Partiduo::Api` : acteur en premier argument, contrôle
+d'accès en première ligne, vues immuables, `Result` à erreurs par champ,
+`ModuleDisabled` si l'extension est inactive.
+
+== Permissions
+
+[cols="1,3",options="header"]
+|===
+|Permission |Usage
+|`choruspro.invoice.read` |factures au canal Chorus Pro, statut, PDF à déposer
+|`choruspro.invoice.transmit` |dépôt, relevé des statuts, dépôt et statut notés à la main
+|`choruspro.settings.manage` |identifiants PISTE et compte technique
+|===
+
+== Paramètres
+
+* `settings(actor) : SettingsView` — environnement, `client_id` et `login`
+  (vides pour qui ne gère pas les paramètres), `secrets_stored`,
+  `checked_at`, `transport` (nom du transport branché, `nil` sinon).
+* `save_credentials(actor, CredentialsInput)` — secrets chiffrés ; un secret
+  vide garde celui enregistré ; vérifiés auprès de Chorus Pro si le
+  transport est branché (`choruspro.errors.transport.credentials`).
+* `clear_credentials(actor)`.
+
+== Factures et dépôts
+
+* `invoices(actor) : Array(InvoiceView)` — documents fiscaux au canal
+  `chorus_pro`, brouillons compris, contrôles locaux.
+* `invoice(actor, id) : InvoiceView` — contrôles auprès de Chorus Pro
+  (structure, engagement, service) si possible.
+* `pdf(actor, id) : FileView` — PDF/A-3 Factur-X à déposer sur le portail.
+* `transmit(actor, id) : Result(InvoiceView)` — dépôt puis
+  `Partiduo::Api::Invoicing.mark_sent` ; refus par contrôle
+  (`choruspro.controls.*`) ou erreur du transport
+  (`choruspro.errors.transport.*`, notée dans l'historique).
+* `refresh(actor, id)`, `refresh_all(actor) : Result(Int32)` — statuts.
+* `note_manual(actor, id, ManualInput)`, `note_status(actor, id,
+  StatusInput)` — repli sans transport.
+* `counts(actor) : CountsView` — à déposer, à reprendre.
+
+== Contrôles (`choruspro.controls.*`)
+
+`not_chorus_channel`, `siret_missing`, `draft` (avertissement),
+`references_hint` (avertissement, brouillon sans références),
+`already_submitted`, `already_sent`, `no_transport` (avertissement à
+l'écran, refus au dépôt), `no_credentials`, `structure_unknown`,
+`engagement_required`, `service_required`, `service_unknown`.
+
+== Statuts
+
+`submitted`, `delivered`, `paid`, `suspended`, `to_recycle`, `rejected`
+(correspondance des statuts de Chorus Pro : `Choruspro::Config::REMOTE_STATUSES`).

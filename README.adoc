@@ -1,0 +1,94 @@
+= partiduo-choruspro — factures aux clients publics par Chorus Pro
+:toc: left
+:toc-title: Table des matières
+:icons: font
+
+*Partiduo* est le portage en Crystal de https://noalyss.eu[NOALYSS], logiciel
+libre de comptabilité créé et maintenu par *Dany De Bontridder*. Partiduo
+n'est pas un projet officiel NOALYSS.
+
+Ce dépôt est l'extension `CHORUSPRO` de Partiduo (ADR-004 D9, révisé le
+28 septembre 2026) : les factures aux administrations publiques (État,
+collectivités, établissements publics) passent par
+https://chorus-pro.gouv.fr[Chorus Pro], pas par une plateforme agréée.
+Partiduo y dépose le PDF/A-3 Factur-X du module Facturation par l'API du
+portail PISTE, avec un compte technique, puis suit le statut de la facture.
+NOALYSS n'a pas d'équivalent.
+
+La spécification est dans `../partiduo-docs/` : ADR-004 D9 (nature du
+client, Chorus Pro), ADR-003 (contrat d'extension), ADR-005 D4 (interface
+d'une extension), ADR-006 D3. Décisions : `../partiduo-app/DECISIONS.adoc`
+(`D-FIN-`), blocages : `../partiduo-app/BLOCAGES.adoc` (`B-FIN-`). Référence
+du contrat : link:doc/api/choruspro.adoc[].
+
+== Fonctions
+
+[cols="1,3",options="header"]
+|===
+|Fonction |Dans CHORUSPRO
+
+|Factures concernées
+|Factures, acomptes et avoirs au canal `chorus_pro` du cœur, proposé pour
+un client de nature « administration publique » (SIREN commençant par 1
+ou 2, ou nature choisie sur la fiche). Brouillons listés avec leurs
+avertissements.
+
+|Contrôles
+|SIRET du destinataire ; structure connue de Chorus Pro ; numéro
+d'engagement (référence de commande, BT-13) et code service (référence
+acheteur, BT-10) quand la structure les exige ; service actif. Les deux
+références sont imprimées sur la facture : elles se saisissent avant
+l'émission.
+
+|Dépôt
+|PDF/A-3 Factur-X du module Facturation (flux `IN_DP_E2_CII_FACTURX`),
+idempotent sur une référence par tentative ; la facture passe « envoyée »
+(canal figé). Une facture « à recycler » se dépose de nouveau.
+
+|Suivi
+|Statuts de Chorus Pro ramenés à six : déposée, mise à disposition, mise en
+paiement, suspendue, à recycler, rejetée (motif conservé) ; historique ;
+un dépôt ne se supprime pas (déclencheur PostgreSQL).
+
+|Repli
+|Sans connexion : PDF à déposer sur le portail, dépôt et statuts notés à la
+main.
+
+|Identifiants
+|Application PISTE (`client_id`, `client_secret`) et compte technique,
+secrets chiffrés (AES-256-CBC puis HMAC-SHA-256), jamais réaffichés ;
+environnement de qualification ou de production toujours affiché.
+|===
+
+== État
+
+Écrite contre une interface abstraite (`Choruspro::Transport`) et un Chorus
+Pro simulé (`spec/support/simulated_chorus_pro.cr`). L'adaptateur réel (API
+PISTE, bac à sable de qualification) se branche par
+`Choruspro::Transports.current =` quand les accès sont obtenus (BLOCAGES
+B-FIN-002).
+
+== Composition
+
+[source,crystal]
+----
+require "partiduo-ui-bulma/partiduo_ui"
+require "partiduo-choruspro"
+require "partiduo-choruspro/ui/bulma"
+# puis Choruspro::INSTALLED_APPS + Choruspro::Ui::INSTALLED_APPS
+# et, pour la ligne de commande : require "partiduo-choruspro/cli"
+----
+
+== Commandes
+
+[source,sh]
+----
+SKIP_MARTEN_CLI_PRECOMPILATION=1 shards install
+DATABASE_URL='postgres:///partiduo_test_<agent>?host=/tmp' crystal spec
+crystal run manage.cr -- genmigrations choruspro   # aucun écart attendu
+crystal tool format src ui spec config scripts manage.cr && bin/ameba
+----
+
+== Licence
+
+AGPL-3.0-or-later (texte intégral dans `LICENSE`).

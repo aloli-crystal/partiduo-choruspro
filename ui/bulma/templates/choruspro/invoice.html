@@ -1,0 +1,58 @@
+{# SPDX-License-Identifier: AGPL-3.0-or-later. Fiche d'une facture au canal Chorus Pro (ADR-004 D9 révisé) : destinataire public (SIRET), code service (référence acheteur, BT-10) et numéro d'engagement (référence de commande, BT-13), contrôles auprès de Chorus Pro, dépôt par l'API ou noté à la main après un dépôt sur le portail, statut et historique. #}{% extend "ui/base.html" %}
+{% block title %}{{ title }}{% endblock title %}
+{% block crumbs %}{% include "ui/_crumbs.html" %}{% endblock crumbs %}
+{% block heading %}{{ title }} <span class="pd-ext">Chorus Pro</span>{% if invoice.status %} <span class="tag {{ invoice.status_class }} is-light" data-choruspro-status="{{ invoice.status }}">{{ invoice.status_label }}</span>{% endif %}{% endblock heading %}
+{% block actions %}<a class="button pd-touch" href="{{ document_url }}">{% include "ui/_icon.html" with name="file-text" %}<span>{% translate "choruspro_ui.actions.document" %}</span></a>{% if pdf_url %}<a class="button pd-touch" href="{{ pdf_url }}">{% include "ui/_icon.html" with name="download" %}<span>{% translate "choruspro_ui.actions.pdf" %}</span></a>{% endif %}{% if transmit_url %}<form method="post" action="{{ transmit_url }}">{% csrf_input %}<button class="button is-primary pd-touch" type="submit" data-choruspro-transmit>{% include "ui/_icon.html" with name="send" %}<span>{% translate "choruspro_ui.actions.transmit" %}</span></button></form>{% endif %}{% if refresh_url %}<form method="post" action="{{ refresh_url }}">{% csrf_input %}<button class="button pd-touch" type="submit">{% include "ui/_icon.html" with name="refresh-cw" %}<span>{% translate "choruspro_ui.actions.refresh" %}</span></button></form>{% endif %}{% endblock actions %}
+{% block content %}
+<div class="pd-grid2">
+<section class="pd-panel" aria-labelledby="pd-cpp-recipient">
+  <header><h2 id="pd-cpp-recipient">{% translate "choruspro_ui.invoice.recipient" %}</h2></header>
+  <div class="pd-body"><dl class="pd-dl">
+    <dt>{% translate "choruspro_ui.invoices.customer" %}</dt><dd>{{ invoice.customer }}</dd>
+    <dt>SIRET</dt><dd class="pd-mono">{% if invoice.siret %}{{ invoice.siret }}{% else %}—{% endif %}</dd>
+    <dt>{% translate "choruspro_ui.invoice.service" %}</dt><dd class="pd-mono">{% if service %}{{ service }}{% else %}—{% endif %}</dd>
+    <dt>{% translate "choruspro_ui.invoice.engagement" %}</dt><dd class="pd-mono">{% if engagement %}{{ engagement }}{% else %}—{% endif %}</dd>
+    <dt>{% translate "choruspro_ui.invoices.date" %}</dt><dd>{{ invoice.date }}</dd>
+    <dt>{% translate "choruspro_ui.invoices.total" %}</dt><dd class="pd-mono">{{ invoice.total }} {{ invoice.currency }}</dd>
+  </dl><p class="help mt-3">{% translate "choruspro_ui.invoice.references_help" %}</p></div>
+</section>
+<section class="pd-panel" aria-labelledby="pd-cpp-controls">
+  <header><h2 id="pd-cpp-controls">{% translate "choruspro_ui.invoice.controls" %}</h2></header>
+  <div class="pd-body">{% if controls %}<ul class="pd-list">{% for control in controls %}<li class="{% if control.error %}has-text-danger{% else %}pd-muted{% endif %}">{% if control.error %}{% include "ui/_icon.html" with name="x" %}{% else %}{% include "ui/_icon.html" with name="circle-help" %}{% endif %} {{ control.message }}</li>{% endfor %}</ul>{% else %}<p>{% include "ui/_icon.html" with name="check" %} {% translate "choruspro_ui.invoice.no_control" %}</p>{% endif %}</div>
+</section>
+</div>
+{% if submission %}<section class="pd-panel" aria-labelledby="pd-cpp-submission">
+  <header><h2 id="pd-cpp-submission">{% translate "choruspro_ui.invoice.submission" %}</h2>{% if submission.manual %}<span class="tag is-light">{% translate "choruspro_ui.invoice.manual" %}</span>{% endif %}</header>
+  <div class="pd-body"><dl class="pd-dl">
+    <dt>{% translate "choruspro_ui.invoice.remote_id" %}</dt><dd class="pd-mono">{% if submission.remote_id %}{{ submission.remote_id }}{% else %}—{% endif %}</dd>
+    <dt>{% translate "choruspro_ui.invoice.submitted_at" %}</dt><dd>{{ submission.submitted_at }}</dd>
+    {% if submission.remote_status %}<dt>{% translate "choruspro_ui.invoice.remote_status" %}</dt><dd class="pd-mono">{{ submission.remote_status }}</dd>{% endif %}
+    {% if submission.status_at %}<dt>{% translate "choruspro_ui.invoice.status_at" %}</dt><dd>{{ submission.status_at }}</dd>{% endif %}
+    {% if submission.reason %}<dt>{% translate "choruspro_ui.invoice.reason" %}</dt><dd>{{ submission.reason }}</dd>{% endif %}
+    <dt>{% translate "choruspro_ui.invoice.attempts" %}</dt><dd>{{ submission.attempts }}</dd>
+  </dl></div>
+</section>{% endif %}
+{% if manual_url %}<section class="pd-panel" aria-labelledby="pd-cpp-manual">
+  <header><h2 id="pd-cpp-manual">{% translate "choruspro_ui.invoice.manual_title" %}</h2></header>
+  <div class="pd-body"><p class="help mb-3">{% translate "choruspro_ui.invoice.manual_help" %}</p>
+    <form method="post" action="{{ manual_url }}" class="field has-addons" data-choruspro-manual>{% csrf_input %}
+      <div class="control is-expanded"><label class="is-sr-only" for="pd-cpp-remote">{% translate "choruspro_ui.invoice.remote_id" %}</label><input class="input pd-mono" id="pd-cpp-remote" name="remote_id" placeholder="{% translate 'choruspro_ui.invoice.remote_id' %}"></div>
+      <div class="control"><button class="button pd-touch" type="submit">{% translate "choruspro_ui.actions.manual" %}</button></div>
+    </form></div>
+</section>{% endif %}
+{% if status_url %}<section class="pd-panel" aria-labelledby="pd-cpp-status">
+  <header><h2 id="pd-cpp-status">{% translate "choruspro_ui.invoice.status_title" %}</h2></header>
+  <div class="pd-body"><form method="post" action="{{ status_url }}" data-choruspro-status-form>{% csrf_input %}
+    <div class="field"><label class="label" for="pd-cpp-status-select">{% translate "choruspro_ui.invoices.status" %}</label><div class="select"><select id="pd-cpp-status-select" name="status">{% for option in statuses %}<option value="{{ option.value }}">{{ option.label }}</option>{% endfor %}</select></div></div>
+    <div class="field"><label class="label" for="pd-cpp-reason">{% translate "choruspro_ui.invoice.reason" %}</label><input class="input" id="pd-cpp-reason" name="reason"></div>
+    <button class="button pd-touch" type="submit">{% translate "ui.forms.save" %}</button>
+  </form></div>
+</section>{% endif %}
+{% if events %}<section class="pd-panel" aria-labelledby="pd-cpp-events">
+  <header><h2 id="pd-cpp-events">{% translate "choruspro_ui.invoice.history" %}</h2></header>
+  <div class="pd-scroll"><table class="table is-fullwidth"><caption class="is-sr-only">{% translate "choruspro_ui.invoice.history" %}</caption>
+    <thead><tr><th scope="col">{% translate "choruspro_ui.invoice.at" %}</th><th scope="col">{% translate "choruspro_ui.invoice.event" %}</th><th scope="col">{% translate "choruspro_ui.invoice.detail" %}</th></tr></thead>
+    <tbody>{% for event in events %}<tr><td>{{ event.at }}</td><td>{{ event.action }}{% if event.status %} <span class="pd-mono is-size-7">{{ event.status }}</span>{% endif %}</td><td>{% if event.detail %}{{ event.detail }}{% endif %}</td></tr>{% endfor %}</tbody>
+  </table></div>
+</section>{% endif %}
+{% endblock content %}

@@ -1,0 +1,27 @@
+{# SPDX-License-Identifier: AGPL-3.0-or-later. Écran « Chorus Pro » (ADR-004 D9 révisé) : factures, acomptes et avoirs au canal Chorus Pro (clients publics), brouillons compris, avec leurs contrôles et le statut de leur dépôt ; relevé des statuts ; sans connexion à Chorus Pro, dépôt du PDF sur le portail puis dépôt noté à la main. #}{% extend "ui/base.html" %}
+{% block title %}{{ title }}{% endblock title %}
+{% block crumbs %}{% include "ui/_crumbs.html" %}{% endblock crumbs %}
+{% block heading %}{{ title }} <span class="pd-ext">Chorus Pro</span>{% endblock heading %}
+{% block actions %}{% if can_transmit %}{% if transport %}<form method="post" action="{{ refresh_url }}">{% csrf_input %}<button class="button pd-touch" type="submit">{% include "ui/_icon.html" with name="refresh-cw" %}<span>{% translate "choruspro_ui.actions.refresh_all" %}</span></button></form>{% endif %}{% endif %}{% endblock actions %}
+{% block content %}
+{% if transport %}<div class="notification is-info is-light pd-alert" role="status" data-choruspro-transport="available">{% include "ui/_icon.html" with name="send" %}<div><p>{% translate "choruspro_ui.transport.available" name: transport %}</p></div></div>
+{% else %}<div class="notification is-warning is-light pd-alert" role="status" data-choruspro-transport="unavailable">{% include "ui/_icon.html" with name="triangle-alert" %}<div><p>{% translate "choruspro_ui.transport.unavailable" %}</p></div></div>{% endif %}
+{% if unconfigured %}<div class="notification is-light pd-alert" role="status" data-choruspro-unconfigured>{% include "ui/_icon.html" with name="settings" %}<div><p>{% translate "choruspro_ui.unconfigured" %}</p>{% if can_settings %}<p class="mt-2"><a href="{{ settings_url }}">{% translate "choruspro_ui.settings.title" %}</a></p>{% endif %}</div></div>{% endif %}
+<section class="pd-panel" aria-labelledby="pd-cpp-invoices">
+  <header><h2 id="pd-cpp-invoices">{% translate "choruspro_ui.invoices.title" %}</h2></header>
+  {% if invoices %}<div class="pd-scroll"><table class="table is-fullwidth" data-choruspro-invoices>
+    <caption class="is-sr-only">{% translate "choruspro_ui.invoices.title" %}</caption>
+    <thead><tr><th scope="col">{% translate "choruspro_ui.invoices.number" %}</th><th scope="col" class="pd-hide-s">{% translate "choruspro_ui.invoices.date" %}</th><th scope="col">{% translate "choruspro_ui.invoices.customer" %}</th><th scope="col" class="pd-hide-s">SIRET</th><th scope="col" class="has-text-right">{% translate "choruspro_ui.invoices.total" %}</th><th scope="col">{% translate "choruspro_ui.invoices.status" %}</th></tr></thead>
+    <tbody>{% for invoice in invoices %}<tr>
+      <td><a href="{{ invoice.url }}">{{ invoice.kind }} {{ invoice.number }}</a></td>
+      <td class="pd-hide-s">{{ invoice.date }}</td>
+      <td>{{ invoice.customer }}</td>
+      <td class="pd-hide-s pd-mono">{% if invoice.siret %}{{ invoice.siret }}{% else %}—{% endif %}</td>
+      <td class="has-text-right pd-mono">{{ invoice.total }} {{ invoice.currency }}</td>
+      <td>{% if invoice.status %}<span class="tag {{ invoice.status_class }} is-light" data-choruspro-status="{{ invoice.status }}">{{ invoice.status_label }}</span>{% elsif invoice.draft %}<span class="tag is-light">{% translate "choruspro_ui.draft" %}</span>{% elsif invoice.ready %}<span class="tag is-success is-light">{% translate "choruspro_ui.invoices.ready" %}</span>{% else %}<span class="tag is-danger is-light">{{ invoice.blocking }}</span>{% endif %}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<div class="pd-body"><p class="pd-muted">{% translate "choruspro_ui.invoices.none" %}</p></div>{% endif %}
+</section>
+<p class="help">{% translate "choruspro_ui.how" %}</p>
+{% endblock content %}

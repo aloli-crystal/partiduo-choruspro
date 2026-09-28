@@ -1,0 +1,12 @@
+# Configuration d'Ameba pour partiduo-choruspro.
+Globs:
+  - "**/*.cr"
+  - "!lib"
+
+Excluded:
+  - lib/
+
+# Contrôles de la saisie des identifiants et commandes offertes sur la fiche
+# d'une facture : une condition par champ ou par état du dépôt.
+Metrics/CyclomaticComplexity:
+  MaxComplexity: 14

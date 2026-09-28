@@ -1,0 +1,62 @@
+nl:
+  choruspro:
+    module:
+      name: "Chorus Pro (facturen aan overheidsklanten)"
+    permissions:
+      invoice:
+        read: "Facturen aan overheidsklanten en hun Chorus Pro-status bekijken"
+        transmit: "Facturen indienen bij Chorus Pro en hun status ophalen"
+      settings:
+        manage: "Chorus Pro instellen (PISTE, technische account)"
+    menu:
+      invoices: "Chorus Pro"
+      settings: "Chorus Pro"
+    statuses:
+      submitted: "Ingediend"
+      delivered: "Ter beschikking gesteld"
+      paid: "Betaling opgedragen"
+      suspended: "Opgeschort"
+      to_recycle: "Te recycleren"
+      rejected: "Geweigerd"
+    environments:
+      qualification: "Kwalificatie (testomgeving)"
+      production: "Productie"
+    actions:
+      submitted: "Ingediend via de API"
+      status: "Statuswijziging"
+      manual: "Indiening handmatig genoteerd"
+      error: "Fout"
+    controls:
+      not_chorus_channel: "Het uitgiftekanaal van dit document is niet Chorus Pro."
+      siret_missing: "Vul het SIRET-nummer van klant %{customer} in op de fiche: Chorus Pro identificeert de overheidsinstantie aan de hand van haar SIRET."
+      draft: "Concept: reik de factuur uit vóór de indiening."
+      references_hint: "Chorus Pro kan een verbintenisnummer (bestelreferentie) en een dienstcode (referentie van de koper) vereisen: vul ze in vóór de uitgifte, ze staan op de factuur."
+      already_submitted: "Factuur al ingediend bij Chorus Pro (status: %{status})."
+      already_sent: "Factuur al als verzonden gemarkeerd buiten Chorus Pro."
+      no_transport: "Verbinding met Chorus Pro niet beschikbaar: laad de pdf op het portaal op en noteer daarna de indiening."
+      no_credentials: "Sla de PISTE-gegevens en de technische account op in de instellingen van Chorus Pro."
+      structure_unknown: "Chorus Pro kent geen overheidsinstantie met SIRET %{siret}."
+      engagement_required: "%{structure} vereist een verbintenisnummer: de bestelreferentie van de factuur ontbreekt."
+      service_required: "%{structure} vereist een dienstcode: de referentie van de koper ontbreekt."
+      service_unknown: "Dienst %{service} bestaat niet bij %{structure}."
+    errors:
+      credentials:
+        client_id: "Vul de identificatie van de PISTE-toepassing in."
+        login: "Vul de login van de technische account in."
+        env: "Onbekende omgeving."
+        unreadable: "Opgeslagen gegevens onleesbaar: vul ze opnieuw in."
+        client_secret: "Vul het geheim van de PISTE-toepassing in."
+        password: "Vul het wachtwoord van de technische account in."
+      manual:
+        remote_id: "Chorus Pro-nummer te lang (hoogstens 128 tekens)."
+      status:
+        no_submission: "Geen indiening voor deze factuur."
+        not_manual: "Deze indiening wordt via de API gevolgd: haal de status op."
+        not_remote: "Deze indiening werd handmatig genoteerd: noteer de status."
+        unknown: "Onbekende status."
+        reason: "Vul de reden van de weigering of opschorting in."
+      transport:
+        credentials: "Chorus Pro weigert de gegevens (PISTE of technische account)."
+        unavailable: "Chorus Pro antwoordt niet; probeer later opnieuw."
+        refused: "Chorus Pro weigert de factuur: %{reason}"
+        unknown_invoice: "Chorus Pro kent deze factuur niet."

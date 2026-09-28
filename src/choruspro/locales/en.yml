@@ -1,0 +1,62 @@
+en:
+  choruspro:
+    module:
+      name: "Chorus Pro (invoices to public customers)"
+    permissions:
+      invoice:
+        read: "View invoices to public customers and their Chorus Pro status"
+        transmit: "Submit invoices to Chorus Pro and fetch their status"
+      settings:
+        manage: "Configure Chorus Pro (PISTE, technical account)"
+    menu:
+      invoices: "Chorus Pro"
+      settings: "Chorus Pro"
+    statuses:
+      submitted: "Submitted"
+      delivered: "Made available"
+      paid: "Payment ordered"
+      suspended: "Suspended"
+      to_recycle: "To be recycled"
+      rejected: "Rejected"
+    environments:
+      qualification: "Qualification (sandbox)"
+      production: "Production"
+    actions:
+      submitted: "Submitted through the API"
+      status: "Status change"
+      manual: "Submission noted by hand"
+      error: "Error"
+    controls:
+      not_chorus_channel: "The issue channel of this document is not Chorus Pro."
+      siret_missing: "Enter the SIRET of customer %{customer} on its card: Chorus Pro identifies the public body by its SIRET."
+      draft: "Draft: issue the invoice before submitting it."
+      references_hint: "Chorus Pro may require a commitment number (order reference) and a service code (buyer reference): fill them in before issuing, they are printed on the invoice."
+      already_submitted: "Invoice already submitted to Chorus Pro (status: %{status})."
+      already_sent: "Invoice already marked as sent outside Chorus Pro."
+      no_transport: "Connection to Chorus Pro unavailable: upload the PDF on the portal, then note the submission."
+      no_credentials: "Save the PISTE credentials and the technical account in the Chorus Pro settings."
+      structure_unknown: "Chorus Pro knows no public body with SIRET %{siret}."
+      engagement_required: "%{structure} requires a commitment number: the invoice has no order reference."
+      service_required: "%{structure} requires a service code: the invoice has no buyer reference."
+      service_unknown: "Service %{service} does not exist at %{structure}."
+    errors:
+      credentials:
+        client_id: "Enter the PISTE application ID."
+        login: "Enter the technical account login."
+        env: "Unknown environment."
+        unreadable: "Saved credentials unreadable: enter them again."
+        client_secret: "Enter the PISTE application secret."
+        password: "Enter the technical account password."
+      manual:
+        remote_id: "Chorus Pro number too long (128 characters at most)."
+      status:
+        no_submission: "No submission for this invoice."
+        not_manual: "This submission is tracked through the API: fetch its status."
+        not_remote: "This submission was noted by hand: note its status."
+        unknown: "Unknown status."
+        reason: "Enter the reason for the rejection or suspension."
+      transport:
+        credentials: "Chorus Pro refuses the credentials (PISTE or technical account)."
+        unavailable: "Chorus Pro does not answer; try again later."
+        refused: "Chorus Pro refuses the invoice: %{reason}"
+        unknown_invoice: "Chorus Pro does not know this invoice."
