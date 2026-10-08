@@ -19,7 +19,15 @@ require "./api/**"
 # l'interface abstraite, branchée sur une simulation dans les specs et sur
 # le bac à sable de qualification quand les accès sont obtenus.
 module Choruspro
-  VERSION = "0.1.0"
+  # Lue à la compilation dans `shard.yml`, seule source du numéro : chaque
+  # commit y incrémente le dernier chiffre.
+  VERSION = {{
+              (read_file("#{__DIR__}/../../shard.yml")
+                .lines
+                .find(&.starts_with?("version:")) || "version: 0.0.0")
+                .gsub(/^version:\s*/, "")
+                .chomp
+            }}
 
   # Code du registre (ADR-003 D2) : `choruspro` dans `PARTIDUO_MODULES`.
   CODE = "CHORUSPRO"
