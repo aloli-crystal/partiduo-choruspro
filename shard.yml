@@ -1,5 +1,5 @@
 name: partiduo-choruspro
-version: 0.1.1
+version: 0.1.2
 
 description: |
   Extension Chorus Pro de Partiduo (ADR-004 D9 révisé) : factures aux
@@ -22,15 +22,18 @@ targets:
 dependencies:
   # Le cœur : registre, événements et contrat Partiduo::Api.
   partiduo:
-    path: ../partiduo-app
+    github: aloli-partiduo/partiduo-app
+    branch: development
   marten:
-    path: ../../prod-crystal/marten
+    github: aloli-crystal/marten
+    branch: production
 
 development_dependencies:
   # L'interface qui monte ui/bulma/ : nécessaire aux specs et à manage.cr ;
   # la distribution l'apporte elle-même.
   partiduo-ui-bulma:
-    path: ../partiduo-ui-bulma
+    github: aloli-partiduo/partiduo-ui-bulma
+    branch: development
   ameba:
     github: crystal-ameba/ameba
     version: "~> 1.6"
