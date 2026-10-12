@@ -1,5 +1,5 @@
 name: partiduo-choruspro
-version: 0.1.0
+version: 0.1.1
 
 description: |
   Extension Chorus Pro de Partiduo (ADR-004 D9 révisé) : factures aux
@@ -24,7 +24,7 @@ dependencies:
   partiduo:
     path: ../partiduo-app
   marten:
-    path: ../../marten
+    path: ../../prod-crystal/marten
 
 development_dependencies:
   # L'interface qui monte ui/bulma/ : nécessaire aux specs et à manage.cr ;
