@@ -17,7 +17,7 @@
 Partiduo::Modules.register do
   code "CHORUSPRO"
   name "choruspro.module.name"
-  version "0.1.0"
+  version Choruspro::VERSION
   requires_core "~> 0.1"
   depends_on "INVOICING"
 
